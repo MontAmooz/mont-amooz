@@ -19,7 +19,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.2.23" # pin: 1.4.4 hangs at install from runners (P4); revisit upstream
+          bun-version: latest # artifact pattern made installs moot; 1.4.4+ reports versions.openssl=3.x which Prisma needs for runtime engine detection (1.2.23 → falls back to 1.1.x → engine not found)
 
       # Issue #4 workaround (ADR-0010): runner egress to package registries is
       # dead (>60min for downloads-only), so node_modules ships as a release
