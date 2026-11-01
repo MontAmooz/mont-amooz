@@ -1,5 +1,10 @@
 generator client {
   provider = "prisma-client-js"
+  // Issue #4 / ADR-0010: CI restores node_modules from a release artifact
+  // built on this machine ("native" = debian-openssl-3.0.x). Prisma's runtime
+  // probe reports debian-openssl-1.1.x on some runner runtimes (e.g. bun's
+  // BoringSSL compat string), so ship both engine variants in the artifact.
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
 
 datasource db {
