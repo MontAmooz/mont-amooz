@@ -32,11 +32,11 @@ jobs:
 
       # single long attempt (see note in test.yml)
       - name: Install dependencies
-        run: bun install --frozen-lockfile --network-concurrency 16
+        run: bun install --frozen-lockfile --verbose --network-concurrency 16
 
       - name: Install classroom-service dependencies
         working-directory: mini-services/classroom-service
-        run: bun install --frozen-lockfile --network-concurrency 16
+        run: bun install --frozen-lockfile --verbose --network-concurrency 16
 
       - name: Generate Prisma client
         run: bunx prisma generate
