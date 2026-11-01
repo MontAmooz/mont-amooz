@@ -68,7 +68,12 @@ export async function startTestServer(): Promise<{ baseUrl: string }> {
   // hardcodes -p 3000, so spawn next directly with an explicit port).
   const baseUrl = `http://localhost:${TEST_PORT}`;
   const nextBin = path.join(appCopyDir, "node_modules", "next", "dist", "bin", "next");
-  proc = spawn(process.execPath, [nextBin, "dev", "-p", TEST_PORT], {
+  // Spawn under real Node — never under the vitest runtime. Under bun,
+  // process.versions.openssl reports BoringSSL's compat string "1.1.0",
+  // which makes Prisma's runtime probe demand a debian-openssl-1.1.x engine
+  // that this artifact doesn't ship (issue #4). Real Node (OpenSSL 3) matches
+  // the shipped debian-openssl-3.0.x engine on every machine.
+  proc = spawn("node", [nextBin, "dev", "-p", TEST_PORT], {
     cwd: appCopyDir,
     env: {
       ...process.env,
