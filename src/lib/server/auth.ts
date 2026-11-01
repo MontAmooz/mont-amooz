@@ -1,4 +1,4 @@
-// OpenEdu Git — server-side auth (scrypt hashing + HMAC-signed session token)
+// مُنت‌آموز — server-side auth (scrypt hashing + HMAC-signed session token)
 // Only import from API routes (server context).
 import crypto from "node:crypto";
 import { cookies } from "next/headers";

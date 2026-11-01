@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — Phase 2 course detail (#/course/{id}): cover, lessons list (locked /
+// مُنت‌آموز — Phase 2 course detail (#/course/{id}): cover, lessons list (locked /
 // watched / free-preview with inline preview player), reviews with upsert form,
 // sticky aside for purchase with wallet + commission note.
 

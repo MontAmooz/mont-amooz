@@ -1,4 +1,4 @@
-# 🌱 OpenEdu Git (نام موقت)
+# 🌱 مُنت‌آموز (MontAmooz) — پلتفرم آموزشی Git-inspired
 
 ## کتابخانهٔ دیجیتال زندهٔ جزوه‌های درسی ایران — مشارکتی، آزاد، گیت‌محور
 
@@ -8,9 +8,9 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](#مجوز)
 [![Content License: CC BY-SA 4.0](https://img.shields.io/badge/Content%20License-CC%20BY--SA%204.0-lightgrey)](https://creativecommons.org/licenses/by-sa/4.0/)
 [![Status: Phase 1+2 MVP](https://img.shields.io/badge/status-Phase%201%2B2%20MVP-yellow)]()
-[![GitHub repo](https://img.shields.io/badge/github-OpenEduGit%2Fopen--edu--git-181717?logo=github)](https://github.com/OpenEduGit/open-edu-git)
+[![GitHub repo](https://img.shields.io/badge/github-MontAmooz%2Fopen--edu--git-181717?logo=github)](https://github.com/MontAmooz/mont-amooz)
 ![RTL Ready](https://img.shields.io/badge/RTL-پشتیبانی%20کامل-orange)
-[![Telegram](https://img.shields.io/badge/تلگرام-گروه%20معلمان-blue)](https://t.me/OpenEduGit)
+[![Telegram](https://img.shields.io/badge/تلگرام-گروه%20معلمان-blue)](https://t.me/MontAmooz)
 
 > معلم‌ها جزوه می‌گذارند، جامعه بازبینی می‌کند و بهترش می‌کند — درست مثل همکاری روی کد با گیت. بهترین نسخهٔ هر درس برای همه رایگان و آزاد می‌ماند.
 
@@ -28,7 +28,7 @@ bunx prisma db push
 bun prisma/seed.ts
 bun run dev
 # باز کن: http://localhost:3000
-# ورود: montajebii@openedu.ir / 123456
+# ورود: montajebii@montamooz.ir / 123456
 ```
 
 پیش‌نیازها: [bun](https://bun.sh) ≥ 1.3 (راهنمای کامل: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)).
@@ -44,13 +44,13 @@ cd mini-services/classroom-service && bun install && bun run dev
 
 | ایمیل | نام | نقش |
 |---|---|---|
-| `montajebii@openedu.ir` | محمدرضا منتجبی | معلم (بنیان‌گذار) |
-| `ali.rezaei@openedu.ir` | علی رضایی | معلم |
-| `z.ahmadi@openedu.ir` | زهرا احمدی | معلم |
-| `s.mohammadi@openedu.ir` | سارا محمدی | معلم |
-| `m.karimi@openedu.ir` | مهدی کریمی | معلم |
-| `f.hosseini@openedu.ir` | فاطمه حسینی | معلم |
-| `hossein@openedu.ir` | حسین نوری | دانش‌آموز |
+| `montajebii@montamooz.ir` | محمدرضا منتجبی | معلم (بنیان‌گذار) |
+| `ali.rezaei@montamooz.ir` | علی رضایی | معلم |
+| `z.ahmadi@montamooz.ir` | زهرا احمدی | معلم |
+| `s.mohammadi@montamooz.ir` | سارا محمدی | معلم |
+| `m.karimi@montamooz.ir` | مهدی کریمی | معلم |
+| `f.hosseini@montamooz.ir` | فاطمه حسینی | معلم |
+| `hossein@montamooz.ir` | حسین نوری | دانش‌آموز |
 
 ## 📚 مستندات
 
@@ -83,7 +83,7 @@ cd mini-services/classroom-service && bun install && bun run dev
 
 - ایمیل: `mohammad.montajebii@gmail.com`
 - گیت‌هاب: [github.com/montajebii](https://github.com/montajebii)
-- تلگرام: [t.me/ATypicalPersianBoy](https://t.me/ATypicalPersianBoy) · گروه: [t.me/OpenEduGit](https://t.me/OpenEduGit)
+- تلگرام: [t.me/ATypicalPersianBoy](https://t.me/ATypicalPersianBoy) · گروه: [t.me/MontAmooz](https://t.me/MontAmooz)
 
 ---
 

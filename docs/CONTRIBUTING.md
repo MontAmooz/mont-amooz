@@ -1,4 +1,4 @@
-# 🤝 راهنمای مشارکت در OpenEdu Git
+# 🤝 راهنمای مشارکت در مُنت‌آموز
 
 **پیش از هر چیز: آمدنت را ارج می‌نهیم!**  
 چه معلمی باشی که جزوه‌اش را به اشتراک می‌گذارد، چه برنامه‌نویسی که کد می‌زند، چه دانش‌آموزی که غلط می‌گیرد، یا تایپیستی که دست‌نویس‌ها را دیجیتال می‌کند — **همین‌جا جای توست**.
@@ -9,7 +9,7 @@
 
 ## 📑 آنچه در این راهنما می‌آید
 
-- [🤝 راهنمای مشارکت در OpenEdu Git](#-راهنمای-مشارکت-در-openedu-git)
+- [🤝 راهنمای مشارکت در مُنت‌آموز](#-راهنمای-مشارکت-در-منتآموز)
   - [📑 آنچه در این راهنما می‌آید](#-آنچه-در-این-راهنما-میآید)
   - [💬 کد رفتاری](#-کد-رفتاری)
   - [🆘 از کجا کمک بگیرم؟](#-از-کجا-کمک-بگیرم)
@@ -36,8 +36,8 @@
 
 ## 🆘 از کجا کمک بگیرم؟
 
-- **گفتگوهای گیت‌هاب:** [بخش Discussions](https://github.com/OpenEduGit/open-edu-git/discussions) برای سؤال‌های عمومی، ایده‌پراکنی و آشنایی.
-- **گروه تلگرامی:** [t.me/OpenEduGit](https://t.me/OpenEduGit) (جای گرم معلم‌ها و برنامه‌نویسان).
+- **گفتگوهای گیت‌هاب:** [بخش Discussions](https://github.com/MontAmooz/mont-amooz/discussions) برای سؤال‌های عمومی، ایده‌پراکنی و آشنایی.
+- **گروه تلگرامی:** [t.me/MontAmooz](https://t.me/MontAmooz) (جای گرم معلم‌ها و برنامه‌نویسان).
 - **ایمیل:** برای ارتباط خصوصی یا ارسال فایل‌های حجیم: `mohammad.montajebii@gmail.com`.
 
 ---
@@ -70,9 +70,9 @@
 
 بازبینی تو ارزشمندتر از طلاست!  
 
-- به [بخش Discussions](https://github.com/OpenEduGit/open-edu-git/discussions) برو و نظرت را دربارهٔ جزوه‌های موجود بنویس.
+- به [بخش Discussions](https://github.com/MontAmooz/mont-amooz/discussions) برو و نظرت را دربارهٔ جزوه‌های موجود بنویس.
 - می‌توانی پیشنهاد بدهی: «اینجا یک مثال از زندگی واقعی کم است»، «این توضیح برای بچه‌های ضعیف‌تر مناسب‌تر است اگر …».
-- اگر خطای علمی یا نگارشی دیدی، یک [Issue جدید](https://github.com/OpenEduGit/open-edu-git/issues/new?template=bug_report.md) باز کن (الگوی «گزارش اشکال محتوایی» را پر کن).
+- اگر خطای علمی یا نگارشی دیدی، یک [Issue جدید](https://github.com/MontAmooz/mont-amooz/issues/new?template=bug_report.md) باز کن (الگوی «گزارش اشکال محتوایی» را پر کن).
 
 برای بازبینی نه گیت لازم است، نه برنامه‌نویسی. فقط کافی است نظرت را بنویسی.
 
@@ -85,8 +85,8 @@
 1. **محیط توسعه را آماده کن:**  
 
    ```bash
-   git clone <آدرس-ریموت> open-edu-git   # ریموت در P2 اعلام می‌شود
-   cd open-edu-git
+   git clone <آدرس-ریموت> mont-amooz   # ریموت در P2 اعلام می‌شود
+   cd mont-amooz
    bun install
    cp .env.example .env                  # AUTH_SECRET=$(openssl rand -hex 32)
    bunx prisma db push && bun prisma/seed.ts
@@ -96,7 +96,7 @@
    جزئیات کامل در [DEVELOPMENT.md](./DEVELOPMENT.md) — از جمله مهم‌ترین تلهٔ این ریپو (مسیر دیتابیس SQLite نسبت به پوشهٔ `prisma/` حل می‌شود).
 
 1. **یک Issue برای خودت پیدا کن:**  
-   به [بخش Issues](https://github.com/OpenEduGit/open-edu-git/issues) برو و برچسب‌های زیر را نگاه کن:
+   به [بخش Issues](https://github.com/MontAmooz/mont-amooz/issues) برو و برچسب‌های زیر را نگاه کن:
    - `good first issue` – مناسب برای اولین مشارکت
    - `help wanted` – دست‌یاری فوری می‌طلبد
    - `backend` / `frontend` / `docs` و غیره.
@@ -138,11 +138,11 @@
 ### 📣 همهٔ ما: گزارش اشکال و پیشنهاد ویژگی
 
 - **گزارش اشکال:**  
-  اگر در پلتفرم، جزوه‌ای، یا هر بخش پروژه مشکلی دیدی، یک [Issue جدید](https://github.com/OpenEduGit/open-edu-git/issues/new?template=bug_report.md) باز کن.  
+  اگر در پلتفرم، جزوه‌ای، یا هر بخش پروژه مشکلی دیدی، یک [Issue جدید](https://github.com/MontAmooz/mont-amooz/issues/new?template=bug_report.md) باز کن.  
   بگو: مشکل چه بود؟ کجا دیدی؟ چه انتظاری داشتی؟ (هرچه دقیق‌تر، بهتر)
 
 - **پیشنهاد ویژگی:**  
-  ایده‌ای برای بهتر شدن داری؟ [فرم پیشنهاد](https://github.com/OpenEduGit/open-edu-git/issues/new?template=feature_request.md) را پر کن. حتی یک خط توضیح هم ارزشمند است.
+  ایده‌ای برای بهتر شدن داری؟ [فرم پیشنهاد](https://github.com/MontAmooz/mont-amooz/issues/new?template=feature_request.md) را پر کن. حتی یک خط توضیح هم ارزشمند است.
 
 ---
 
@@ -168,7 +168,7 @@
 ## 📡 کانال‌های ارتباطی
 
 - **گیت‌هاب Discussions:** گفتگوهای عمومی، ایده‌پردازی، پرسش و پاسخ.
-- **تلگرام:** [t.me/OpenEduGit](https://t.me/OpenEduGit) – مناسب برای گفتگوهای سریع‌تر و معلم‌هایی که با گیت‌هاب راحت نیستند.
+- **تلگرام:** [t.me/MontAmooz](https://t.me/MontAmooz) – مناسب برای گفتگوهای سریع‌تر و معلم‌هایی که با گیت‌هاب راحت نیستند.
 - **ایمیل بنیان‌گذار:** `mohammad.montajebii@gmail.com` برای موضوعات خصوصی یا دعوت به همکاری.
 
 ---
@@ -194,4 +194,4 @@
 
 > **«تنها راه رسیدن به بهترین جزوه، نوشتن آن با هم است.»**  
 > از اینکه هستی و می‌خواهی سهیم باشی، بی‌نهایت سپاسگزاریم.  
-> — تیم OpenEdu Git 🌱
+> — تیم مُنت‌آموز 🌱

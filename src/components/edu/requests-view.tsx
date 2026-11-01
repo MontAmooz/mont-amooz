@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — merge requests list view with status filter tabs.
+// مُنت‌آموز — merge requests list view with status filter tabs.
 
 import { ArrowLeft, GitPullRequest } from "lucide-react";
 import { useState } from "react";

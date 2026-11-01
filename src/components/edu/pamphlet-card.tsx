@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — pamphlet summary card (grid item everywhere: home browse, profiles).
+// مُنت‌آموز — pamphlet summary card (grid item everywhere: home browse, profiles).
 
 import { Eye, GitFork, History } from "lucide-react";
 import { DIFFICULTY_STYLES, METHOD_STYLES } from "@/lib/constants";

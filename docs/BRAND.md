@@ -1,7 +1,7 @@
-# 🌱 BRAND.md – OpenEdu Git
+# 🌱 BRAND.md – مُنت‌آموز
 
-> **Project Name:** OpenEdu Git
-> **Alias:** OpenEduGit
+> **Project Name:** مُنت‌آموز
+> **Alias:** MontAmooz
 > **Brand Voice:** Teacher’s voice, student’s voice, community’s voice
 > **Synchronization:** This document is synchronized within the project’s Obsidian vault.
 > **Design Stance:** Bold & Expressive — Raw, anti-design aesthetic inspired by concrete architecture with unadorned elements, jarring layouts, and functional minimalism.
@@ -13,7 +13,7 @@
 **Project Slogan:**
 > **"Everyone knows everything, and we decided to bring everyone together."**
 
-This slogan is the heartbeat of OpenEdu Git. It reflects our belief that collective knowledge, when shared openly and collaboratively, creates the best educational resources for every student in Iran.
+This slogan is the heartbeat of مُنت‌آموز. It reflects our belief that collective knowledge, when shared openly and collaboratively, creates the best educational resources for every student in Iran.
 
 **Mission:** To build a living library of Iranian educational handouts where teachers can collaborate, students can find the best resources, and everyone can benefit freely and openly.
 
@@ -334,8 +334,8 @@ The definitive colour palette is established and documented below. **All colours
   "بهترین منابع آموزشی آنهایی هستند که با هم ساخته می‌شوند. شما هم می‌توانید مشارکت کنید."
 
 - **For the Community:**
-  "Better education builds a better future. With OpenEdu Git, be part of that future."
-  "آموزش بهتر، آینده بهتری می‌سازد. با OpenEdu Git، بخشی از آن آینده باشید."
+  "Better education builds a better future. With مُنت‌آموز, be part of that future."
+  "آموزش بهتر، آینده بهتری می‌سازد. با مُنت‌آموز، بخشی از آن آینده باشید."
 
 ---
 
@@ -388,4 +388,4 @@ The definitive colour palette is established and documented below. **All colours
 ---
 
 > **"The only way to create the best handout is to write it together."**
-> — The OpenEdu Git Team 🌱
+> — The مُنت‌آموز Team 🌱

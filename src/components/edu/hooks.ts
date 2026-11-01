@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — small shared client hooks.
+// مُنت‌آموز — small shared client hooks.
 
 import { useEffect, useRef, useState } from "react";
 

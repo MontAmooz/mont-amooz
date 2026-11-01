@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — home view: hero, live stats, browse (filters + grid), how-it-works, top teachers.
+// مُنت‌آموز — home view: hero, live stats, browse (filters + grid), how-it-works, top teachers.
 
 import {
   Award,

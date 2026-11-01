@@ -1,4 +1,4 @@
-# 🌿 GIT-STRATEGY.md — استراتژی گیت OpenEdu Git
+# 🌿 GIT-STRATEGY.md — استراتژی گیت مُنت‌آموز
 
 > مصوب: ADR-0008 (**GitHub Flow** — بازنگری 2026-10-30؛ نسخهٔ اول GitFlow بود). این سند قرارداد عملیاتی است.
 
@@ -57,10 +57,10 @@ docs(adr): بازنگری ADR-0008 به GitHub Flow
 ## 6. وضعیت Remote
 
 ```bash
-git remote add origin git@github.com:OpenEduGit/open-edu-git.git   # SSH — انجام شد (P2)
+git remote add origin git@github.com:MontAmooz/mont-amooz.git   # SSH — انجام شد (P2)
 git push -u origin main
 # محافظت main: PR الزامی، enforce_admins=true، force-push/حذف ممنوع (P2)
 ```
 
-- مخزن قدیمی (پیش از بازسازی تاریخچه): `OpenEduGit/open-edu-git-legacy` (private، حفظ‌شده به‌عنوان آرشیو).
+- مخزن قدیمی (پیش از بازسازی تاریخچه): `MontAmooz/mont-amooz-legacy` (private، حفظ‌شده به‌عنوان آرشیو).
 - قرارداد کامل: [docs/adr/0008-gitflow-going-forward.md](adr/0008-gitflow-going-forward.md).

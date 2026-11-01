@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — tiny hash router for the single-route SPA.
+// مُنت‌آموز — tiny hash router for the single-route SPA.
 // Phase 1: #/ , #/pamphlet/{id} , #/create , #/edit/{id} , #/requests , #/request/{id} , #/user/{id} , #/profile
 // Phase 2: #/market , #/book/{id} , #/sessions , #/session/{id} , #/courses , #/course/{id} ,
 //          #/learn , #/learn/{id} , #/teach , #/wallet

@@ -1,5 +1,5 @@
 {
-  "name": "nextjs_tailwind_shadcn_ts",
+  "name": "montamooz",
   "version": "0.2.1",
   "private": true,
   "scripts": {
@@ -98,5 +98,14 @@
     "tw-animate-css": "^1.3.5",
     "typescript": "^5",
     "vitest": "^5.0.5"
+  },
+  "description": "مُنت‌آموز — پلتفرم آموزشی Git-inspired برای جزوه‌های درسی ایران (MontAmooz — Git-inspired educational platform for Iranian schools)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MontAmooz/mont-amooz.git"
+  },
+  "homepage": "https://github.com/MontAmooz/mont-amooz",
+  "bugs": {
+    "url": "https://github.com/MontAmooz/mont-amooz/issues"
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — Phase 2 video-course store (#/courses): sticky filter aside (desktop) +
+// مُنت‌آموز — Phase 2 video-course store (#/courses): sticky filter aside (desktop) +
 // filters Sheet (mobile), debounced search synced to listHash("courses", …), course grid.
 
 import {

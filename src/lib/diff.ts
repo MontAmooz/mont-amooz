@@ -1,4 +1,4 @@
-// OpenEdu Git — line diff (LCS) + contribution scoring
+// مُنت‌آموز — line diff (LCS) + contribution scoring
 // Shared between API routes (server) and seed script.
 
 export interface LineDiff {

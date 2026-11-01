@@ -95,7 +95,7 @@ describe("Auth — register", () => {
 });
 
 describe("Auth — login", () => {
-  test("valid creds return 200 + set oeg_session cookie", async () => {
+  test("valid creds return 200 + set ma_session cookie", async () => {
     const res = await fetch(`${baseUrl}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -103,9 +103,9 @@ describe("Auth — login", () => {
     });
     expect(res.status).toBe(200);
     const setCookie = res.headers.get("set-cookie");
-    expect(setCookie).toMatch(/oeg_session=/);
+    expect(setCookie).toMatch(/ma_session=/);
     expect(setCookie).toMatch(/HttpOnly/i);
-    sessionCookie = setCookie!.split(";")[0]; // "oeg_session=..."
+    sessionCookie = setCookie!.split(";")[0]; // "ma_session=..."
   });
 
   test("bad password returns 401", async () => {
@@ -144,7 +144,7 @@ describe("Auth — /me and /logout", () => {
 
   test("/me with forged cookie returns 401", async () => {
     const res = await fetch(`${baseUrl}/api/v1/auth/me`, {
-      headers: { Cookie: "oeg_session=eyJhbGc.forged-signature" },
+      headers: { Cookie: "ma_session=eyJhbGc.forged-signature" },
     });
     expect(res.status).toBe(401);
   });
@@ -156,7 +156,7 @@ describe("Auth — /me and /logout", () => {
     });
     expect(res.status).toBe(200);
     const setCookie = res.headers.get("set-cookie");
-    expect(setCookie).toMatch(/oeg_session=;/); // emptied value
+    expect(setCookie).toMatch(/ma_session=;/); // emptied value
   });
 
   // CAPTURES ACTUAL BEHAVIOR (documented in /tmp/oeg-diag/22-bugs-found.md):

@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — Phase 2 teaching marketplace (#/market): find teachers with open slots,
+// مُنت‌آموز — Phase 2 teaching marketplace (#/market): find teachers with open slots,
 // search + sort (URL-synced via listHash), teacher cards → booking page.
 
 import { BookOpen, GraduationCap, Search, Star } from "lucide-react";

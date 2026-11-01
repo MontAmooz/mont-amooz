@@ -1,4 +1,4 @@
-// OpenEdu Git — DB row → API-shape mappers shared by /api/v1 routes.
+// مُنت‌آموز — DB row → API-shape mappers shared by /api/v1 routes.
 import { computePercentages } from "@/lib/diff";
 import type { Prisma, Txn } from "@prisma/client";
 import type {

@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — login/register dialog (tabs), controlled by the global store.
+// مُنت‌آموز — login/register dialog (tabs), controlled by the global store.
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -168,7 +168,7 @@ export function AuthDialog() {
               </Button>
               <div className="border-2 border-gold bg-gold/10 p-3 text-xs leading-6 text-[#7a5c1e]">
                 <span className="font-black">حساب نمونه برای تست:</span>{" "}
-                <span className="oeg-mono" dir="ltr">montajebii@openedu.ir</span> با رمز{" "}
+                <span className="oeg-mono" dir="ltr">montajebii@montamooz.ir</span> با رمز{" "}
                 <span className="oeg-mono" dir="ltr">123456</span>
               </div>
             </form>

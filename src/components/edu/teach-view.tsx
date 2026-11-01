@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — Phase 2 teacher panel (#/teach): tabs کلاس‌ها (sessions + earnings summary),
+// مُنت‌آموز — Phase 2 teacher panel (#/teach): tabs کلاس‌ها (sessions + earnings summary),
 // برنامهٔ تدریس (slot create/delete), دوره‌ها (my courses + management + create wizard).
 
 import {

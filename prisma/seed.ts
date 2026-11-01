@@ -39,7 +39,7 @@ async function main() {
   const [mohammad, ali, zahra, sara, mehdi, fateme, hossein] = await Promise.all([
     db.user.create({
       data: {
-        email: "montajebii@openedu.ir", passwordHash: pw,
+        email: "montajebii@montamooz.ir", passwordHash: pw,
         fullName: "محمدرضا منتجبی", title: "آقای",
         role: "معلم",
         bio: "معلم ریاضی مدارس دولتی و نمونه؛ باور دارم بهترین آموزگار، جامعه است. بنیان‌گذار اُپن‌ای‌دیو گیت.",
@@ -49,7 +49,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: "ali.rezaei@openedu.ir", passwordHash: pw,
+        email: "ali.rezaei@montamooz.ir", passwordHash: pw,
         fullName: "علی رضایی", title: "آقای", role: "معلم",
         bio: "دبیر ریاضی و حسابان؛ عاشق آموزش مفهومی با مثال‌های روزمره.",
         expertise: "حسابان,آمار و احتمال,ریاضی",
@@ -58,7 +58,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: "z.ahmadi@openedu.ir", passwordHash: pw,
+        email: "z.ahmadi@montamooz.ir", passwordHash: pw,
         fullName: "زهرا احمدی", title: "خانم", role: "معلم",
         bio: "دبیر فیزیک متوسطهٔ دوم؛ طراح سؤالات آزمون‌های آزمایشی.",
         expertise: "فیزیک,حرکت‌شناسی,آزمون‌سازی",
@@ -67,7 +67,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: "s.mohammadi@openedu.ir", passwordHash: pw,
+        email: "s.mohammadi@montamooz.ir", passwordHash: pw,
         fullName: "سارا محمدی", title: "خانم", role: "معلم",
         bio: "دبیر شیمی؛ معتقدم شیمی نباید ترسناک باشد.",
         expertise: "شیمی,استوکیومتری,ترمودینامیک",
@@ -76,7 +76,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: "m.karimi@openedu.ir", passwordHash: pw,
+        email: "m.karimi@montamooz.ir", passwordHash: pw,
         fullName: "مهدی کریمی", title: "آقای", role: "معلم",
         bio: "دبیر ادبیات فارسی؛ روایت‌گر شعر و سبک زندگی شاعران.",
         expertise: "ادبیات فارسی,حافظ,سبک‌شناسی",
@@ -85,7 +85,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: "f.hosseini@openedu.ir", passwordHash: pw,
+        email: "f.hosseini@montamooz.ir", passwordHash: pw,
         fullName: "فاطمه حسینی", title: "خانم", role: "معلم",
         bio: "دبیر زیست‌شناسی؛ مدرس دوره‌های المپیادی.",
         expertise: "زیست‌شناسی,سلول,ژنتیک",
@@ -94,7 +94,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: "hossein@openedu.ir", passwordHash: pw,
+        email: "hossein@montamooz.ir", passwordHash: pw,
         fullName: "حسین نوری", role: "دانش‌آموز",
         bio: "دانش‌آموز پایهٔ دوازدهم ریاضی؛ علاقه‌مند به جزوه‌های مفهومی.",
         expertise: "",
@@ -1316,8 +1316,8 @@ $y' = 5(2x+1)^4 \\times 2 = 10(2x+1)^4$
   };
   console.log("✅ Seed complete:", counts);
   console.log("🔑 Demo login (all users): password = 123456");
-  console.log("   e.g. montajebii@openedu.ir / 123456  (معلم — حسابان، دوره‌ها)");
-  console.log("   e.g. hossein@openedu.ir / 123456     (دانش‌آموز — کیف پول، جلسهٔ فردا با استاد منتجبی)");
+  console.log("   e.g. montajebii@montamooz.ir / 123456  (معلم — حسابان، دوره‌ها)");
+  console.log("   e.g. hossein@montamooz.ir / 123456     (دانش‌آموز — کیف پول، جلسهٔ فردا با استاد منتجبی)");
 }
 
 main()

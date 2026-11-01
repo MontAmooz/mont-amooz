@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**OpenEdu Git** (اُپن‌اُدیو گیت) is a Persian/RTL, GitHub-inspired collaborative platform for Iranian school handouts (pamphlets), now evolving into a comprehensive teaching marketplace.
+**مُنت‌آموز** (اُپن‌اُدیو گیت) is a Persian/RTL, GitHub-inspired collaborative platform for Iranian school handouts (pamphlets), now evolving into a comprehensive teaching marketplace.
 
 **Current Status**: Phase 2 MVP complete - includes both Pamphlet Hub and Teaching Marketplace features.
 
@@ -44,13 +44,13 @@ This sandbox uses SQLite for the development database:
 ### Key Demo Accounts
 
 All passwords: `123456`
-- `montajebii@openedu.ir` (محمدرضا، founder)
-- `ali.rezaei@openedu.ir`
-- `z.ahmadi@openedu.ir`
-- `s.mohammadi@openedu.ir`
-- `m.karimi@openedu.ir`
-- `f.hosseini@openedu.ir`
-- `hossein@openedu.ir`
+- `montajebii@montamooz.ir` (محمدرضا، founder)
+- `ali.rezaei@montamooz.ir`
+- `z.ahmadi@montamooz.ir`
+- `s.mohammadi@montamooz.ir`
+- `m.karimi@montamooz.ir`
+- `f.hosseini@montamooz.ir`
+- `hossein@montamooz.ir`
 
 **Maintenance**: Run `bun prisma/seed.ts` after major schema changes to reset test data.
 
@@ -320,7 +320,7 @@ bun run lint
 ### Verify Browser E2E
 
 1. Open two browser windows/tabs
-2. Log in as `montajebii@openedu.ir` and `hossein@openedu.ir`
+2. Log in as `montajebii@montamooz.ir` and `hossein@montamooz.ir`
 3. Navigate to classroom session MT4G8S (e.g., `#/session/MT4G8S`)
 4. Test live chat + whiteboard in both sessions
 5. Check console for errors

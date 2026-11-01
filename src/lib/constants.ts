@@ -1,4 +1,4 @@
-// OpenEdu Git — shared constants (Persian educational taxonomy)
+// مُنت‌آموز — shared constants (Persian educational taxonomy)
 
 export const GRADES = [
   "هفتم",
@@ -60,7 +60,7 @@ export const DIFFICULTY_STYLES: Record<string, string> = {
   پیشرفته: "bg-[#DC2626]/10 text-[#DC2626] border-[#DC2626]/40",
 };
 
-export const SESSION_COOKIE = "oeg_session";
+export const SESSION_COOKIE = "ma_session";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
 export const SORT_OPTIONS = [
