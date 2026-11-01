@@ -104,6 +104,17 @@ curl -s localhost:3000/api/v1/stats                                     # pamphl
 - مالکیت فایل‌ها: `src/app/api/**` بک‌اند، `src/components/edu/*.tsx` ویوها، `src/lib/{constants,types,format,diff}.ts` مشترک — **دست نزنید**: `src/app/layout.tsx`, `globals.css`, `page.tsx` بدون هماهنگی
 - برای تصمیم‌های فنی: اول [DECISIONS.md](DECISIONS.md) و [adr/](adr/) — واگرایی خاموش ممنوع
 
+## عیب‌یابی — بخش تکمیلی: artifacts و پشتیبان
+
+- **آرتیفکت‌های عیب‌یابی** در `.diag/` (gitignored) نگهداری می‌شوند — خروجی تست‌ها،
+  گزارش‌های فازها، لاگ‌های CI. **`/tmp` ephemeral است** (tmpfs — با ریبوت پاک می‌شود؛
+  در ریبوت 2026-11-01 همهٔ artifacts قبلی از دست رفت). هیچ چیز مهمی آنجا نگذارید.
+- **باندل پشتیبان گیت:** `.diag/backup-YYYYMMDD.bundle` — پس از هر فاز بزرگ تازه‌سازی کنید:
+  `git bundle create .diag/backup-$(date +%Y%m%d).bundle --all`
+- **CI install:** node_modules از release asset `v0.3.0-deps` بازگردانی می‌شود
+  ([ADR-0010](adr/0010-ci-install-reliability.md)) — بعد از هر تغییر `bun.lock`،
+  artifact را محلی بازسازی و جایگزین کنید، وگرنه CI وابستگی‌های کهنه می‌بیند.
+
 ## مراجع
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — معماری و ERD

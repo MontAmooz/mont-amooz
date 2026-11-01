@@ -19,6 +19,7 @@
 | 0007 | محتوای جزوه: Markdown در دیتابیس (تا MinIO) | ✅ ACCEPTED — MinIO در P5 | [adr/0007-markdown-in-db.md](adr/0007-markdown-in-db.md) |
 | 0008 | GitHub Flow + Conventional Commits (بازنگری از GitFlow) | ✅ ACCEPTED — اعمال در P2 | [adr/0008-gitflow-going-forward.md](adr/0008-gitflow-going-forward.md) |
 | 0009 | تست: Vitest (واحد + یکپارچگی سبک)، E2E در P4.6 | ✅ ACCEPTED | [adr/0009-testing-strategy.md](adr/0009-testing-strategy.md) |
+| 0010 | CI: node_modules به‌صورت release artifact (تحریم خروجی رانرها) | ✅ ACCEPTED — بازگشت پس از ۷ اجرای پایدار | [adr/0010-ci-install-reliability.md](adr/0010-ci-install-reliability.md) |
 
 ---
 
