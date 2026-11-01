@@ -34,7 +34,6 @@ jobs:
 
       # single long attempt (see note in test.yml)
       - name: Install dependencies
-        timeout-minutes: 8
         run: bun install --frozen-lockfile --ignore-scripts --network-concurrency 16
 
       - name: Install classroom-service dependencies
