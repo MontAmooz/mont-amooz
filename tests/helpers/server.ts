@@ -48,22 +48,32 @@ export async function startTestServer(): Promise<{ baseUrl: string }> {
   );
 
   // Push schema + seed against the throwaway DB (seed.ts is the verified fixture)
-  execSync("bunx prisma db push --skip-generate --accept-data-loss", {
-    cwd: appCopyDir,
-    env: { ...process.env, DATABASE_URL: dbUrl },
-    stdio: "pipe",
-  });
-  execSync("bun prisma/seed.ts", {
-    cwd: appCopyDir,
-    env: { ...process.env, DATABASE_URL: dbUrl },
-    stdio: "pipe",
-  });
+  try {
+    execSync("bunx prisma db push --skip-generate --accept-data-loss", {
+      cwd: appCopyDir,
+      env: { ...process.env, DATABASE_URL: dbUrl },
+      stdio: "pipe",
+    });
+    execSync("bun prisma/seed.ts", {
+      cwd: appCopyDir,
+      env: { ...process.env, DATABASE_URL: dbUrl },
+      stdio: "pipe",
+    });
+  } catch (e) {
+    console.error("[helper] db push/seed FAILED:", e);
+    throw e;
+  }
 
   // Start an isolated dev server on TEST_PORT (package.json's dev script
   // hardcodes -p 3000, so spawn next directly with an explicit port).
   const baseUrl = `http://localhost:${TEST_PORT}`;
   const nextBin = path.join(appCopyDir, "node_modules", "next", "dist", "bin", "next");
-  proc = spawn(process.execPath, [nextBin, "dev", "-p", TEST_PORT], {
+  // Spawn under real Node — never under the vitest runtime. Under bun,
+  // process.versions.openssl reports BoringSSL's compat string "1.1.0",
+  // which makes Prisma's runtime probe demand a debian-openssl-1.1.x engine
+  // that this artifact doesn't ship (issue #4). Real Node (OpenSSL 3) matches
+  // the shipped debian-openssl-3.0.x engine on every machine.
+  proc = spawn("node", [nextBin, "dev", "-p", TEST_PORT], {
     cwd: appCopyDir,
     env: {
       ...process.env,
@@ -74,6 +84,9 @@ export async function startTestServer(): Promise<{ baseUrl: string }> {
     stdio: ["ignore", "pipe", "pipe"],
     detached: true, // own process group → group-kill takes next-server children too
   });
+  const serverLogPath = path.join(appCopyDir, "server-stderr.log");
+  proc.stderr!.pipe(fs.createWriteStream(serverLogPath));
+  (proc as ChildProcess & { __serverLog?: string }).__serverLog = serverLogPath;
 
   // Wait for "Ready" in stdout (up to 60s); surface stderr on early exit
   await new Promise<void>((resolve, reject) => {
@@ -98,6 +111,14 @@ export async function startTestServer(): Promise<{ baseUrl: string }> {
 }
 
 export async function stopTestServer(): Promise<void> {
+  // dump the tail of the ephemeral server log for CI debugging (issue #4)
+  const logPath = (proc as (ChildProcess & { __serverLog?: string }) | null)?.__serverLog;
+  if (proc && logPath && fs.existsSync(logPath)) {
+    try {
+      const tail = fs.readFileSync(logPath, "utf8").slice(-4000);
+      console.error("[helper] ===== ephemeral server log tail =====\n" + tail);
+    } catch { /* best effort */ }
+  }
   if (proc) {
     try {
       // kill the whole process group (next dev spawns next-server children)
