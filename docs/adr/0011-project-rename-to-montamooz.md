@@ -48,3 +48,9 @@ ADRهای 0001 تا 0010 محتوای فنی خود را حفظ کرده‌ان�
 - اگر مسئلهٔ حقوقی/ثبت علامت تجاری پیش آید
 - اگر اجتماع کاربری نام دیگری را ترجیح دهد
 - بازنگری در هر فاز بزرگ بعدی
+
+## Post-rename note (2026-11-01)
+
+GitHub org `OpenEduGit` renamed to `MontAmooz` via web UI. All workflow coordinates
+updated. Old URLs (both `OpenEduGit/open-edu-git` and `OpenEduGit/mont-amooz`)
+301-redirect to the new location.
