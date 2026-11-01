@@ -20,28 +20,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache bun
+      - name: Cache node_modules (issue #4 workaround — see ADR-0010)
         uses: actions/cache@v4
+        id: nmcache
         with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
+          path: |
+            node_modules
+            mini-services/classroom-service/node_modules
+          key: node-modules-${{ hashFiles('bun.lock') }}
 
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.2.23" # pin: 1.4.4 hangs at install from runners (P4); revisit upstream
 
-      # single long attempt: registry throughput collapsed (~50x vs P3's 28s
-      # install); bun is silent until done, so inner timeouts killed healthy
-      # slow installs. One success primes actions/cache for all later runs.
-      - name: Install dependencies (root)
-        run: bun install --frozen-lockfile --network-concurrency 16
+      - name: Install dependencies (cache miss only)
+        if: steps.nmcache.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile --ignore-scripts --network-concurrency 16
 
-      - name: Install dependencies (classroom-service)
+      - name: Install classroom-service deps (cache miss only)
+        if: steps.nmcache.outputs.cache-hit != 'true'
         working-directory: mini-services/classroom-service
-        run: bun install --frozen-lockfile --network-concurrency 16
+        run: bun install --frozen-lockfile --ignore-scripts
 
       - name: Generate Prisma client
+        if: steps.nmcache.outputs.cache-hit != 'true'
+        timeout-minutes: 10
+        env:
+          PRISMA_ENGINES_MIRROR: https://registry.npmmirror.com/-/binary/prisma
         run: bunx prisma generate
 
       - name: Run tests (unit + auth integration)
