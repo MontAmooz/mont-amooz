@@ -13,39 +13,27 @@ concurrency:
 jobs:
   quality:
     runs-on: ubuntu-22.04
-    # 10min proved too tight for a cold-runner bun install (P4 PR #3 timed out
-    # mid-install); 20min matches the test job and the cache makes it moot.
-    timeout-minutes: 60
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-
-      - name: Cache node_modules (issue #4 workaround — see ADR-0010)
-        uses: actions/cache@v4
-        id: nmcache
-        with:
-          path: |
-            node_modules
-            mini-services/classroom-service/node_modules
-          key: node-modules-${{ hashFiles('bun.lock') }}
 
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.2.23" # pin: 1.4.4 hangs at install from runners (P4); revisit upstream
 
-      # single long attempt (see note in test.yml)
-      - name: Install dependencies
-        run: bun install --frozen-lockfile --ignore-scripts --network-concurrency 16
-
-      - name: Install classroom-service dependencies
-        working-directory: mini-services/classroom-service
-        run: bun install --frozen-lockfile --ignore-scripts --network-concurrency 16
-
-      - name: Generate Prisma client
-        if: steps.nmcache.outputs.cache-hit != 'true'
-        timeout-minutes: 10
+      # Issue #4 workaround (ADR-0010): runner egress to package registries is
+      # dead (>60min for downloads-only), so node_modules ships as a release
+      # asset (built on linux-x64 glibc; includes the generated Prisma client).
+      # Refresh: rebuild locally + replace the v0.3.0-deps asset after any
+      # bun.lock change.
+      - name: Restore node_modules from release artifact
+        run: |
+          gh release download v0.3.0-deps --repo OpenEduGit/open-edu-git \
+            --pattern "node_modules-ci.tgz" --output /tmp/deps.tgz
+          tar xzf /tmp/deps.tgz
+          rm /tmp/deps.tgz
         env:
-          PRISMA_ENGINES_MIRROR: https://registry.npmmirror.com/-/binary/prisma
-        run: bunx prisma generate
+          GH_TOKEN: ${{ github.token }}
 
       - name: Type check
         run: bunx tsc --noEmit
