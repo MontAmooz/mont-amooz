@@ -1,0 +1,48 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # Required at module load of src/lib/server/auth.ts (see ADR-0004)
+      AUTH_SECRET: "ci-test-secret-32-bytes-minimum-length"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache bun
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2.23" # pin: 1.4.4 hangs at install from runners (P4); revisit upstream
+
+      # single long attempt: registry throughput collapsed (~50x vs P3's 28s
+      # install); bun is silent until done, so inner timeouts killed healthy
+      # slow installs. One success primes actions/cache for all later runs.
+      - name: Install dependencies (root)
+        run: bun install --frozen-lockfile --network-concurrency 16
+
+      - name: Install dependencies (classroom-service)
+        working-directory: mini-services/classroom-service
+        run: bun install --frozen-lockfile --network-concurrency 16
+
+      - name: Generate Prisma client
+        run: bunx prisma generate
+
+      - name: Run tests (unit + auth integration)
+        run: bun run test

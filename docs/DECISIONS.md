@@ -18,6 +18,7 @@
 | 0006 | کلاس زنده: چت + تخته (بدون WebRTC فعلاً) | ✅ ACCEPTED — WebRTC در P11 | [adr/0006-chat-whiteboard-classroom.md](adr/0006-chat-whiteboard-classroom.md) |
 | 0007 | محتوای جزوه: Markdown در دیتابیس (تا MinIO) | ✅ ACCEPTED — MinIO در P5 | [adr/0007-markdown-in-db.md](adr/0007-markdown-in-db.md) |
 | 0008 | GitHub Flow + Conventional Commits (بازنگری از GitFlow) | ✅ ACCEPTED — اعمال در P2 | [adr/0008-gitflow-going-forward.md](adr/0008-gitflow-going-forward.md) |
+| 0009 | تست: Vitest (واحد + یکپارچگی سبک)، E2E در P4.6 | ✅ ACCEPTED | [adr/0009-testing-strategy.md](adr/0009-testing-strategy.md) |
 
 ---
 

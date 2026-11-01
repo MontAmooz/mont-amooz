@@ -13,20 +13,30 @@ concurrency:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 10min proved too tight for a cold-runner bun install (P4 PR #3 timed out
+    # mid-install); 20min matches the test job and the cache makes it moot.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache bun
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.2.23" # pin: 1.4.4 hangs at install from runners (P4); revisit upstream
 
+      # single long attempt (see note in test.yml)
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --network-concurrency 16
 
       - name: Install classroom-service dependencies
         working-directory: mini-services/classroom-service
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --network-concurrency 16
 
       - name: Generate Prisma client
         run: bunx prisma generate

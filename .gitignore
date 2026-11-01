@@ -80,3 +80,8 @@ console.log
 
 # local git bundles (backups)
 *.bundle
+
+# Test artifacts (P4)
+coverage/
+/tmp/
+tests/**/*.db

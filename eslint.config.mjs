@@ -54,6 +54,7 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "skills",
     ".remember/**", // agent tool residue
     ".freebuff/**", // agent tool residue
+    "coverage/**", // test coverage output (P4)
     "tool-results/**", // if ever re-created
     "agent-ctx/**", // if ever re-created
     "download/**", // if ever re-created
