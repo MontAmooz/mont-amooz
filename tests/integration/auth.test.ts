@@ -2,26 +2,23 @@
 // Runs against an EPHEMERAL server + throwaway SQLite DB on TEST_PORT (default 3002 —
 // never 3000, and 3001 is occupied by a system docker-proxy on the maintainer machine).
 // Status expectations reflect ACTUAL route behavior (register returns 201, not 200).
-import { describe, test, expect, beforeAll, afterAll } from "vitest";
-import { startTestServer, stopTestServer } from "../helpers/server";
+import { describe, test, expect, beforeAll } from "vitest";
+import fs from "node:fs";
 
-let baseUrl: string;
+// One server for the whole run — started by tests/global-setup.ts (vitest
+// globalSetup). Workers read the url through the handshake file.
+const baseUrl = () => fs.readFileSync("/tmp/oeg-test-url.txt", "utf8").trim();
+
 let testEmail: string;
 let sessionCookie: string;
 
-beforeAll(async () => {
-  const s = await startTestServer();
-  baseUrl = s.baseUrl;
+beforeAll(() => {
   testEmail = `test-${Date.now()}@example.com`;
-}, 90_000);
-
-afterAll(async () => {
-  await stopTestServer();
 });
 
 describe("Auth — register", () => {
   test("valid payload returns 201 + PublicUser without email", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/register`, {
+    const res = await fetch(`${baseUrl()}/api/v1/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -39,7 +36,7 @@ describe("Auth — register", () => {
   });
 
   test("duplicate email returns 409", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/register`, {
+    const res = await fetch(`${baseUrl()}/api/v1/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -54,7 +51,7 @@ describe("Auth — register", () => {
   });
 
   test("short password returns 400", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/register`, {
+    const res = await fetch(`${baseUrl()}/api/v1/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -67,7 +64,7 @@ describe("Auth — register", () => {
   });
 
   test("invalid email returns 400", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/register`, {
+    const res = await fetch(`${baseUrl()}/api/v1/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -80,7 +77,7 @@ describe("Auth — register", () => {
   });
 
   test("invalid role returns 400", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/register`, {
+    const res = await fetch(`${baseUrl()}/api/v1/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -96,7 +93,7 @@ describe("Auth — register", () => {
 
 describe("Auth — login", () => {
   test("valid creds return 200 + set ma_session cookie", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/login`, {
+    const res = await fetch(`${baseUrl()}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: testEmail, password: "test-password-1234" }),
@@ -109,7 +106,7 @@ describe("Auth — login", () => {
   });
 
   test("bad password returns 401", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/login`, {
+    const res = await fetch(`${baseUrl()}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: testEmail, password: "wrong-password" }),
@@ -118,7 +115,7 @@ describe("Auth — login", () => {
   });
 
   test("missing fields returns 400", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/login`, {
+    const res = await fetch(`${baseUrl()}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "" }),
@@ -129,7 +126,7 @@ describe("Auth — login", () => {
 
 describe("Auth — /me and /logout", () => {
   test("/me with valid cookie returns the user", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/me`, {
+    const res = await fetch(`${baseUrl()}/api/v1/auth/me`, {
       headers: { Cookie: sessionCookie },
     });
     expect(res.status).toBe(200);
@@ -138,19 +135,19 @@ describe("Auth — /me and /logout", () => {
   });
 
   test("/me without cookie returns 401", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/me`);
+    const res = await fetch(`${baseUrl()}/api/v1/auth/me`);
     expect(res.status).toBe(401);
   });
 
   test("/me with forged cookie returns 401", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/me`, {
+    const res = await fetch(`${baseUrl()}/api/v1/auth/me`, {
       headers: { Cookie: "ma_session=eyJhbGc.forged-signature" },
     });
     expect(res.status).toBe(401);
   });
 
   test("/logout returns 200 and clears the cookie", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/logout`, {
+    const res = await fetch(`${baseUrl()}/api/v1/auth/logout`, {
       method: "POST",
       headers: { Cookie: sessionCookie },
     });
@@ -163,7 +160,7 @@ describe("Auth — /me and /logout", () => {
   // session tokens are stateless HMAC — logout only clears the cookie client-side,
   // the token itself stays valid until expiry. Known limitation (ADR-0004: no revocation).
   test("KNOWN LIMITATION: old cookie still authenticates after /logout (stateless HMAC)", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/auth/me`, {
+    const res = await fetch(`${baseUrl()}/api/v1/auth/me`, {
       headers: { Cookie: sessionCookie },
     });
     // Documented in 22-bugs-found.md — do NOT fail on it here; assert the captured reality:

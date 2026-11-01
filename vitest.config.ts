@@ -3,6 +3,9 @@ import path from "node:path";
 
 export default defineConfig({
   test: {
+    globalSetup: "./tests/global-setup.ts",
+    // one shared DB across integration files → no cross-file parallelism
+    fileParallelism: false,
     include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts"],
     exclude: ["node_modules", ".next", "mini-services/**"],
     environment: "node",
