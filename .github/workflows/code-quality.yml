@@ -26,6 +26,12 @@ jobs:
       # asset (built on linux-x64 glibc; includes the generated Prisma client).
       # Refresh: rebuild locally + replace the v0.3.0-deps asset after any
       # bun.lock change.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20 # OpenSSL 3 — Prisma runtime detection must match the
+                           # debian-openssl-3.0.x engine shipped in the artifact
+                           # (runner default node reports openssl 1.1 → engine
+                           # not found → every DB query 500s; issue #4)
       - name: Restore node_modules from release artifact
         run: |
           gh release download v0.3.0-deps --repo OpenEduGit/open-edu-git \
