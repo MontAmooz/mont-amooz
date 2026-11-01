@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     # 10min proved too tight for a cold-runner bun install (P4 PR #3 timed out
     # mid-install); 20min matches the test job and the cache makes it moot.
     timeout-minutes: 60
