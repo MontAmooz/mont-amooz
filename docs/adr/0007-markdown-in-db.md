@@ -1,5 +1,12 @@
 # ADR-0007 — محتوای جزوه: Markdown در دیتابیس (تا MinIO)
 
+<!--
+NOTE (2026-11-01): The project was renamed from "OpenEdu Git" to مُنت‌آموز / MontAmooz.
+Name references in this ADR body were updated to the new name; all other content is unchanged.
+See ADR-0011 for the rename decision.
+-->
+
+
 - **Status:** ACCEPTED — مهاجرت به MinIO برنامه‌ریزی‌شده در **P5**
 - **Date:** 2026-10-30
 - **Supersedes:** بخش «File Storage» در DECISIONS v1 + خط لولهٔ LaTeX→PDF سند DEVELOPMENT v1.

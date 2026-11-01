@@ -1,4 +1,4 @@
-# کد رفتاری — OpenEdu Git
+# کد رفتاری — مُنت‌آموز
 
 > نسخهٔ خلاصه و فارسی‌شدهٔ [Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/) برای جامعهٔ معلمان، دانش‌آموزان و برنامه‌نویسان ایران.
 

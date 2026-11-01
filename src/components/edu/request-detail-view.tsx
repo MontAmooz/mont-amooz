@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — merge request detail: meta, line diff, approve/reject (with confirm dialogs).
+// مُنت‌آموز — merge request detail: meta, line diff, approve/reject (with confirm dialogs).
 
 import { ArrowRight, GitMerge, X } from "lucide-react";
 import { useState } from "react";

@@ -1,4 +1,4 @@
-// OpenEdu Git — Persian formatting helpers (client-safe, no server deps)
+// مُنت‌آموز — Persian formatting helpers (client-safe, no server deps)
 
 const faDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
 

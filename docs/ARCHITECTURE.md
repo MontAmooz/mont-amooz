@@ -1,4 +1,4 @@
-# OpenEdu Git — معماری فعلی (Architecture as Implemented)
+# مُنت‌آموز — معماری فعلی (Architecture as Implemented)
 
 > این سند **واقعیت کد** را توصیف می‌کند (تاریخ به‌روزرسانی: 2026-10-30).
 > پشتهٔ چشم‌انداز اولیه (FastAPI/PostgreSQL/MinIO/Redis/K8s) در [docs/archive/2026-10-pre-reconciliation/ARCHITECTURE.md](archive/2026-10-pre-reconciliation/ARCHITECTURE.md) آرشیو شده؛ انحراف‌ها و مسیر بازگشت به آن اهداف در [docs/adr/](adr/) مستند است.

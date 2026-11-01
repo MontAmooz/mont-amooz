@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — Phase 2 realtime classroom (#/session/{id}): socket.io chat +
+// مُنت‌آموز — Phase 2 realtime classroom (#/session/{id}): socket.io chat +
 // collaborative whiteboard (normalized strokes, dpr-aware canvas, undo/clear),
 // presence, and member-gated access (403 → ErrorBox). Read-only after end/cancel.
 

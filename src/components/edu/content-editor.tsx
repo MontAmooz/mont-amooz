@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — shared Markdown content editor with live preview (used by create + edit views).
+// مُنت‌آموز — shared Markdown content editor with live preview (used by create + edit views).
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";

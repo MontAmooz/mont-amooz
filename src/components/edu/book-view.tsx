@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — Phase 2 booking page (#/book/{id}): teacher header + open slots grouped
+// مُنت‌آموز — Phase 2 booking page (#/book/{id}): teacher header + open slots grouped
 // by day; booking an available slot charges the wallet (with confirm dialog + commission note).
 
 import { ArrowRight, CalendarClock, Clock, GraduationCap, Star, Wallet as WalletIcon } from "lucide-react";

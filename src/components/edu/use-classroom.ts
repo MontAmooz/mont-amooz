@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — Phase 2 realtime classroom hook (socket.io mini-service on :3003 via gateway).
+// مُنت‌آموز — Phase 2 realtime classroom hook (socket.io mini-service on :3003 via gateway).
 // Fetches a join ticket from REST, then connects `io("/?XTransformPort=3003")` (gateway rule).
 // Exposes presence (members), board strokes (snapshot + live) and external chat messages.
 // Own strokes are appended locally on send (server only broadcasts to OTHERS — no echo).

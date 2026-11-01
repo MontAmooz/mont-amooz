@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — sticky bottom footer (root wrapper is min-h-screen flex flex-col; this gets mt-auto).
+// مُنت‌آموز — sticky bottom footer (root wrapper is min-h-screen flex flex-col; this gets mt-auto).
 
 import { LogoMark } from "./bits";
 
@@ -58,7 +58,7 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-white/10 py-4 text-center text-xs text-white/40">
-        <span className="oeg-mono">OpenEdu Git</span> — ساخته‌شده با عشق برای معلم‌های ایران
+        <span className="oeg-mono">مُنت‌آموز</span> — ساخته‌شده با عشق برای معلم‌های ایران
       </div>
     </footer>
   );

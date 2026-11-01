@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — single-route SPA shell (hash routing).
+// مُنت‌آموز — single-route SPA shell (hash routing).
 // Layout: sticky navbar / main (route switch) / sticky footer + global auth dialog.
 
 import { useEffect, useRef } from "react";

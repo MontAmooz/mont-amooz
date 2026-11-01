@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — Phase 2 wallet view (#/wallet): balance hero, deposit through a mock
+// مُنت‌آموز — Phase 2 wallet view (#/wallet): balance hero, deposit through a mock
 // Zarinpal-style gateway («پرداخت‌یار»), withdraw dialog and the transactions ledger.
 
 import { ArrowDownLeft, ArrowUpRight, CreditCard, History, ShieldCheck, Wallet as WalletIcon } from "lucide-react";

@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — Phase 2 lesson player (#/learn/{courseId}): video player + lesson sidebar
+// مُنت‌آموز — Phase 2 lesson player (#/learn/{courseId}): video player + lesson sidebar
 // with progress, watch toggle (POST /lessons/{id}/watched), prev/next navigation.
 
 import {

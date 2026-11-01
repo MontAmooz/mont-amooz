@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — pamphlet detail view: header, actions (fork/edit/propose-merge),
+// مُنت‌آموز — pamphlet detail view: header, actions (fork/edit/propose-merge),
 // GitHub-style tabs: محتوا / تاریخچه / مشارکت‌کنندگان / بازخوردها / درخواست‌های ادغام.
 
 import { GitMerge, Pencil, Star, ThumbsDown, ThumbsUp, ArrowRight, Eye, GitFork, History } from "lucide-react";

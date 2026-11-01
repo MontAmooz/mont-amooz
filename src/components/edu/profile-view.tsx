@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — public profile view (#/user/{id}) + own-profile variant with edit dialog (#/profile).
+// مُنت‌آموز — public profile view (#/user/{id}) + own-profile variant with edit dialog (#/profile).
 
 import { Award, CalendarClock, Code, FileText, GitMerge, GraduationCap, Pencil, PlayCircle, Star } from "lucide-react";
 import { useState } from "react";

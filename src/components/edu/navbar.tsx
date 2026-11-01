@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — sticky top navbar: logo, search, nav links, upload CTA, user menu, mobile drawer.
+// مُنت‌آموز — sticky top navbar: logo, search, nav links, upload CTA, user menu, mobile drawer.
 
 import { useState } from "react";
 import {

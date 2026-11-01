@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — pamphlet content renderer (Markdown + $math$ via KaTeX, RTL).
+// مُنت‌آموز — pamphlet content renderer (Markdown + $math$ via KaTeX, RTL).
 
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";

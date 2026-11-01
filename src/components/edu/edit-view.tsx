@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — edit content view (author only): publishes a new version.
+// مُنت‌آموز — edit content view (author only): publishes a new version.
 
 import { ArrowRight, History } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

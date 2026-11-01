@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — Phase 2 my-learning view (#/learn): enrolled course grid with progress.
+// مُنت‌آموز — Phase 2 my-learning view (#/learn): enrolled course grid with progress.
 
 import { ArrowRight, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";

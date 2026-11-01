@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — star rating: display mode (rounded fill) + interactive input mode.
+// مُنت‌آموز — star rating: display mode (rounded fill) + interactive input mode.
 
 import { useState } from "react";
 import { Star } from "lucide-react";

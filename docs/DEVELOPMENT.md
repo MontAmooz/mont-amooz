@@ -1,4 +1,4 @@
-# ⚙️ DEVELOPMENT.md — راهنمای محیط توسعه OpenEdu Git
+# ⚙️ DEVELOPMENT.md — راهنمای محیط توسعه مُنت‌آموز
 
 > وضعیت واقعی کدبیس: **Next.js 16 + Prisma + SQLite + socket.io mini-service**. (راهنمای قدیمی docker-compose/FastAPI در [archive](archive/2026-10-pre-reconciliation/DEVELOPMENT.md) است.)
 
@@ -14,7 +14,7 @@
 ## راه‌اندازی (از صفر)
 
 ```bash
-git clone <remote> open-edu-git && cd open-edu-git   # ریموت در P2 اضافه می‌شود
+git clone <remote> mont-amooz && cd mont-amooz   # ریموت در P2 اضافه می‌شود
 bun install
 
 cp .env.example .env          # سپس مقادیر واقعی را بگذارید:
@@ -70,7 +70,7 @@ bun prisma studio        # مرورگر داده
 ## تست (وضعیت فعلی)
 
 - **دستی:** curl برای API (نمونه‌ها در SECURITY/ARCHITECTURE) + مرورگر برای UI
-- **کلاس دو-نشسته:** دو پنجرهٔ مرورگر، ورود با `montajebii@openedu.ir` و `hossein@openedu.ir`، رفتن به `#/session/<CODE>`، تست چت + تخته
+- **کلاس دو-نشسته:** دو پنجرهٔ مرورگر، ورود با `montajebii@montamooz.ir` و `hossein@montamooz.ir`، رفتن به `#/session/<CODE>`، تست چت + تخته
 - تست‌های خودکار: برنامه‌ریزی در P3 — تا آن موقع تست بنویسید ولی برای CI صبر کنید
 
 ## عیب‌یابی

@@ -1,4 +1,4 @@
-# Changelog — OpenEdu Git
+# Changelog — مُنت‌آموز
 
 All notable changes to this project will be documented in this file.
 

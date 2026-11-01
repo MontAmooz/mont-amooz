@@ -1,5 +1,12 @@
 # ADR-0010 — CI install reliability: release-artifact node_modules
 
+<!--
+NOTE (2026-11-01): The project was renamed from "OpenEdu Git" to مُنت‌آموز / MontAmooz.
+Name references in this ADR body were updated to the new name; all other content is unchanged.
+See ADR-0011 for the rename decision.
+-->
+
+
 - **Status:** ACCEPTED
 - **Date:** 2026-11-01
 - **Tracks:** issue #4 (closed)

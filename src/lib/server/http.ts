@@ -1,4 +1,4 @@
-// OpenEdu Git — shared HTTP helpers for /api/v1 route handlers.
+// مُنت‌آموز — shared HTTP helpers for /api/v1 route handlers.
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "./auth";
 

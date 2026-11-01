@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — create pamphlet view (auth required): 3-step wizard.
+// مُنت‌آموز — create pamphlet view (auth required): 3-step wizard.
 
 import { ArrowRight, Check, Upload } from "lucide-react";
 import { Fragment, useState } from "react";

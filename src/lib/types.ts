@@ -1,4 +1,4 @@
-// OpenEdu Git — shared API types (used by both server routes and client)
+// مُنت‌آموز — shared API types (used by both server routes and client)
 
 export interface PublicUser {
   id: string;

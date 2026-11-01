@@ -34,7 +34,7 @@ jobs:
                            # not found → every DB query 500s; issue #4)
       - name: Restore node_modules from release artifact
         run: |
-          gh release download v0.3.0-deps --repo OpenEduGit/open-edu-git \
+          gh release download v0.3.0-deps --repo OpenEduGit/mont-amooz # TODO(org-rename): flip to MontAmooz/mont-amooz after the org is renamed via GitHub UI \
             --pattern "node_modules-ci.tgz" --output /tmp/deps.tgz
           tar xzf /tmp/deps.tgz
           rm /tmp/deps.tgz

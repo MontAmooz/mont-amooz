@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — global client state (zustand): session user + auth dialog.
+// مُنت‌آموز — global client state (zustand): session user + auth dialog.
 
 import { create } from "zustand";
 import { api } from "@/lib/client";

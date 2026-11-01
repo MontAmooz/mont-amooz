@@ -1,5 +1,5 @@
-// OpenEdu Git — client-side API helper (Task 2-b, frontend)
-// All requests go to the same-origin /api/v1 base; the oeg_session cookie rides along.
+// مُنت‌آموز — client-side API helper (Task 2-b, frontend)
+// All requests go to the same-origin /api/v1 base; the ma_session cookie rides along.
 
 const BASE = "/api/v1";
 

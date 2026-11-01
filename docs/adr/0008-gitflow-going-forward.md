@@ -1,5 +1,12 @@
 # ADR-0008 — استراتژی شاخه‌بندی: GitHub Flow (ساده‌شده، به‌جای GitFlow)
 
+<!--
+NOTE (2026-11-01): The project was renamed from "OpenEdu Git" to مُنت‌آموز / MontAmooz.
+Name references in this ADR body were updated to the new name; all other content is unchanged.
+See ADR-0011 for the rename decision.
+-->
+
+
 - **Status:** ACCEPTED (بازنگری‌شده 2026-10-30 — پیش‌نویس اول GitFlow بود)
 - **Date:** 2026-10-30
 - **Supersedes:** پیش‌نویس قبلی همین ADR (GitFlow)

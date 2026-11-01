@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — shared small UI pieces (avatars, state boxes, badges, skeletons, logo).
+// مُنت‌آموز — shared small UI pieces (avatars, state boxes, badges, skeletons, logo).
 
 import { Loader2, Lock, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

@@ -1,6 +1,6 @@
 "use client";
 
-// OpenEdu Git — Phase 2 my-sessions view (#/sessions): role tabs + upcoming/past filter,
+// مُنت‌آموز — Phase 2 my-sessions view (#/sessions): role tabs + upcoming/past filter,
 // session cards with meeting code, cancel (refund rules), complete (teacher) and review.
 
 import { CalendarDays, CheckCheck, Copy, DoorOpen, X } from "lucide-react";
