@@ -14,7 +14,10 @@ import { createServer } from "node:http";
 import crypto from "node:crypto";
 import { Server, type Socket } from "socket.io";
 
-const PORT = 3003;
+// Port: 3003 by default; overridable via PORT env so E2E can run an isolated
+// instance alongside the dev service (the gateway only rewrites the query, so
+// callers choose the port via their own reverse proxy).
+const PORT = parseInt(process.env.PORT || "3003", 10);
 const SECRET = (() => {
   const s = process.env.AUTH_SECRET;
   if (!s || s.length < 16) {
