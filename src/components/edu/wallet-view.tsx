@@ -237,7 +237,7 @@ function GatewayDialog({
           <div className="grid grid-cols-2 border-2 border-gray-200 text-sm">
             <div className="border-e-2 border-gray-200 p-3">
               <p className="text-xs text-gray-400">پرداخت به</p>
-              <p className="mt-1 font-black">اُپن‌ای‌دیو گیت</p>
+              <p className="mt-1 font-black">مُنت‌آموز</p>
             </div>
             <div className="p-3">
               <p className="text-xs text-gray-400">مبلغ قابل پرداخت</p>

@@ -8,7 +8,7 @@ test("gateway without XTransformPort serves the app", async ({ request }) => {
   const res = await request.get("/");
   expect(res.status()).toBe(200);
   const html = await res.text();
-  expect(html).toContain("اُپن‌ای‌دیو گیت");
+  expect(html).toContain("مُنت‌آموز");
 });
 
 test("gateway with XTransformPort=3003 reaches classroom /health", async ({ request }) => {

@@ -116,7 +116,7 @@ export function AuthDialog() {
         <DialogHeader>
           <DialogTitle className="text-xl font-black">ورود / ثبت‌نام</DialogTitle>
           <DialogDescription>
-            به اُپن‌ای‌دیو گیت بپیوندید — کتابخانهٔ زندهٔ جزوه‌های درسی ایران.
+            به مُنت‌آموز بپیوندید — کتابخانهٔ زندهٔ جزوه‌های درسی ایران.
           </DialogDescription>
         </DialogHeader>
 

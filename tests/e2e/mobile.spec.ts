@@ -19,7 +19,7 @@ test("hamburger drawer and filters sheet open", async ({ page }) => {
 
   // drawer (navbar sheet)
   await page.getByLabel("باز کردن منو").click();
-  await expect(page.getByText("منوی ناوبری و جستجوی اُپن‌ای‌دیو گیت")).toBeVisible({ timeout: 20000 });
+  await expect(page.getByText("منوی ناوبری و جستجوی مُنت‌آموز")).toBeVisible({ timeout: 20000 });
   await page.keyboard.press("Escape");
 
   // filters sheet (browse section)

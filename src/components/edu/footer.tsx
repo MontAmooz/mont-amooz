@@ -20,7 +20,7 @@ export function SiteFooter() {
           <div className="flex items-center gap-2">
             <LogoMark className="size-8 text-white" />
             <span className="text-lg font-black">
-              اُپن‌ای‌دیو <span className="text-gold">گیت</span>
+              مُنت <span className="text-gold">آموز</span>
             </span>
           </div>
           <p className="mt-4 text-sm leading-7 text-white/60">
