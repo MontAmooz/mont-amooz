@@ -1,0 +1,72 @@
+name: E2E
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Required at module load of src/lib/server/auth.ts (see ADR-0004).
+      # Random per run — the app copy and the classroom service both inherit
+      # it from the e2e orchestrator, so ticket signing/verification matches.
+      AUTH_SECRET: ${{ secrets.E2E_AUTH_SECRET != '' && secrets.E2E_AUTH_SECRET || 'e2e-secret-placeholder-not-less-than-32-bytes' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest # same reason as test.yml (openssl probe ≥1.4.4)
+
+      # Issue #4 workaround (ADR-0010): node_modules ships as a release asset.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20 # OpenSSL 3 must match the artifact's Prisma engine
+
+      - name: Restore node_modules from release artifact
+        run: |
+          gh release download v0.3.0-deps --repo MontAmooz/mont-amooz \
+            --pattern "node_modules-ci.tgz" --output /tmp/deps.tgz
+          tar xzf /tmp/deps.tgz
+          rm /tmp/deps.tgz
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Verify classroom-service deps
+        run: |
+          test -d mini-services/classroom-service/node_modules || \
+            { echo "::error::classroom node_modules missing"; exit 1; }
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('bun.lock') }}-v1
+
+      - name: Install Playwright Chromium (cache miss)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: node node_modules/playwright/cli.js install --with-deps chromium
+
+      - name: Install Playwright system deps (cache hit)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: node node_modules/playwright/cli.js install-deps chromium
+
+      - name: Run E2E
+        run: node node_modules/playwright/cli.js test
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
