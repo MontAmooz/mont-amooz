@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 
 test("home renders with stats and pamphlet cards", async ({ page }) => {
   await page.goto("/");
-  await expect(page).toHaveTitle(/اُپن‌ای‌دیو گیت/);
+  await expect(page).toHaveTitle(/مُنت‌آموز/);
   await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
   // cards live in the browse section; each is an <a href="#/pamphlet/{id}">
   await expect(page.locator('a[href^="#/pamphlet/"]').first()).toBeVisible({

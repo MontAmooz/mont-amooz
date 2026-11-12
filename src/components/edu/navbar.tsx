@@ -126,11 +126,11 @@ export function Navbar() {
         <a
           href="#/"
           className="flex shrink-0 items-center gap-2"
-          aria-label="اُپن‌ای‌دیو گیت — صفحهٔ اصلی"
+          aria-label="مُنت‌آموز — صفحهٔ اصلی"
         >
           <LogoMark className="size-9 text-ink" />
           <span className="hidden text-lg font-black sm:inline">
-            اُپن‌ای‌دیو <span className="text-primary">گیت</span>
+            مُنت <span className="text-primary">آموز</span>
           </span>
         </a>
 
@@ -274,10 +274,10 @@ export function Navbar() {
         <SheetContent side="right" className="w-[300px] gap-0 overflow-y-auto p-0 sm:w-[320px]">
           <SheetHeader className="border-b-2 border-ink">
             <SheetTitle className="flex items-center gap-2 font-black">
-              <LogoMark className="size-7 text-ink" /> اُپن‌ای‌دیو گیت
+              <LogoMark className="size-7 text-ink" /> مُنت‌آموز
             </SheetTitle>
             <SheetDescription className="sr-only">
-              منوی ناوبری و جستجوی اُپن‌ای‌دیو گیت
+              منوی ناوبری و جستجوی مُنت‌آموز
             </SheetDescription>
           </SheetHeader>
 

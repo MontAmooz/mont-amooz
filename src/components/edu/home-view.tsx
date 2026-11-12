@@ -456,7 +456,7 @@ export function HomeView({ params }: { params: HomeParams }) {
       </section>
 
       {/* ---------- Phase 2 promo band ---------- */}
-      <section className="border-b-2 border-ink bg-secondary" aria-label="تازه‌های اُپن‌ای‌دیو گیت">
+      <section className="border-b-2 border-ink bg-secondary" aria-label="تازه‌های مُنت‌آموز">
         <div className="mx-auto max-w-7xl px-4 py-8 md:py-10">
           <p className="oeg-mono text-center text-xs font-bold text-[#8a6a24]">
             جدید | فاز ۲
