@@ -81,6 +81,12 @@ console.log
 # local git bundles (backups)
 *.bundle
 
+# Playwright (P8)
+/test-results/
+/playwright-report/
+/playwright/.cache/
+blob-report/
+
 # Test artifacts (P4)
 coverage/
 /tmp/
