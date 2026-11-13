@@ -105,6 +105,15 @@ export function faToman(amount: number): string {
   return `${faNumber(amount)} تومان`;
 }
 
+/** Byte size with Persian digits, e.g. «۲٫۴ مگابایت» / «۷۸۰ کیلوبایت». */
+export function faFileSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) {
+    const mb = Math.round((bytes / (1024 * 1024)) * 10) / 10;
+    return `${toFaDigits(String(mb).replace(".", "٫"))} مگابایت`;
+  }
+  return `${faNumber(Math.ceil(bytes / 1024))} کیلوبایت`;
+}
+
 /** Signed money for transaction lists: +۱۲۵٬۰۰۰ / −۱۲۵٬۰۰۰ (without the word). */
 export function faSignedAmount(amount: number): string {
   const sign = amount > 0 ? "+" : amount < 0 ? "−" : "";

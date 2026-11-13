@@ -1,6 +1,7 @@
 // GET /api/v1/pamphlets/[id] — PamphletDetail (increments viewCount)
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/server/auth";
+import { signedDownloadUrl } from "@/lib/server/storage";
 import { fail, ok } from "@/lib/server/http";
 import {
   buildContributors,
@@ -67,6 +68,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       createdBy: v.createdBy,
     })),
     contributors: buildContributors(p.contributions, p.authorId),
+    attachments: p.attachments.map((a) => ({
+      id: a.id,
+      fileName: a.fileName,
+      contentType: a.contentType,
+      sizeBytes: a.sizeBytes,
+      signedUrl: signedDownloadUrl(a.id),
+      createdAt: a.createdAt.toISOString(),
+    })),
     openMergeRequestCount,
     isMine: !!user && user.id === p.authorId,
     myReview: myReviewRow ? toReviewItem(myReviewRow, user?.id ?? null) : null,

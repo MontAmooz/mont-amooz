@@ -63,6 +63,9 @@ db/*.db
 db/*.db-journal
 prisma/db/
 
+# ===== P9 / ADR-0012 — local attachment storage (never commit; backup via systemd timer) =====
+uploads/
+
 # second package manager (repo is bun-managed)
 package-lock.json
 mini-services/**/package-lock.json

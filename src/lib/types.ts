@@ -33,8 +33,20 @@ export interface PamphletSummary {
   forkedFromId?: string | null;
   forkedFromTitle?: string | null;
   author: PamphletAuthor;
+  hasAttachment: boolean;
+  attachmentType?: string | null; // "pdf" | "docx" | …
   createdAt: string;
   updatedAt: string;
+}
+
+/** ADR-0012 — attachment metadata as exposed by the API (never storageKey). */
+export interface PamphletAttachmentItem {
+  id: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  signedUrl: string;
+  createdAt: string;
 }
 
 export interface VersionSummary {
@@ -69,6 +81,7 @@ export interface PamphletDetail extends PamphletSummary {
   latestVersionNumber: number;
   versions: VersionSummary[];
   contributors: Contributor[];
+  attachments: PamphletAttachmentItem[];
   openMergeRequestCount: number;
   isMine: boolean;
   myReview?: ReviewItem | null;

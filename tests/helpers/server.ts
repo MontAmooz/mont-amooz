@@ -14,6 +14,7 @@ import fs from "node:fs";
 let proc: ChildProcess | null = null;
 let testDbPath: string | null = null;
 let appCopyDir: string | null = null;
+let uploadsDir: string | null = null;
 
 /** Port for the ephemeral server. NEVER 3000 (dev server). 3001 is occupied by a
  * root-owned docker-proxy on the maintainer's machine, so the default is 3002. */
@@ -25,6 +26,13 @@ export async function startTestServer(): Promise<{ baseUrl: string }> {
   // Fresh DB per test run
   testDbPath = `/tmp/oeg-test-${Date.now()}.db`;
   const dbUrl = `file:${testDbPath}`;
+
+  // Attachment uploads (ADR-0012) must not land inside the app copy: this
+  // process's Turbopack watcher has no .git dir to root ignore rules at, so a
+  // runtime write into the watched tree re-triggers Fast Refresh and remounts
+  // the SPA mid-test (P9 flake lesson). Throwaway dir, same isolation model as
+  // the throwaway DB above.
+  uploadsDir = `/tmp/oeg-test-uploads-${Date.now()}`;
 
   // Isolated app copy (own .next → own dev lock)
   appCopyDir = `/tmp/oeg-test-app-${Date.now()}`;
@@ -78,6 +86,7 @@ export async function startTestServer(): Promise<{ baseUrl: string }> {
     env: {
       ...process.env,
       DATABASE_URL: dbUrl,
+      UPLOADS_DIR: uploadsDir,
       AUTH_SECRET:
         process.env.AUTH_SECRET || "test-secret-at-least-32-bytes-long-for-vitest-only",
     },
@@ -135,6 +144,13 @@ export async function stopTestServer(): Promise<void> {
       /* best effort */
     }
     testDbPath = null;
+  }
+  if (uploadsDir && fs.existsSync(uploadsDir)) {
+    try {
+      fs.rmSync(uploadsDir, { recursive: true, force: true });
+    } catch {
+      /* best effort */
+    }
   }
   if (appCopyDir && fs.existsSync(appCopyDir)) {
     try {

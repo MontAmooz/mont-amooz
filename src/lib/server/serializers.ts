@@ -32,11 +32,40 @@ export const pamphletSummaryInclude = {
   reviews: { select: { rating: true } },
   versions: { select: { versionNumber: true, content: true } },
   forks: { select: { id: true } },
+  // ADR-0012 — extractedText rides along for the JS-filter search pattern;
+  // fileName so detail responses can map full attachment items from one include
+  attachments: {
+    select: {
+      id: true,
+      fileName: true,
+      contentType: true,
+      sizeBytes: true,
+      extractedText: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "asc" },
+  },
 } satisfies Prisma.PamphletInclude;
 
 export type PamphletSummaryRow = Prisma.PamphletGetPayload<{
   include: typeof pamphletSummaryInclude;
 }>;
+
+/** File-extension shorthand for a stored attachment content type. */
+export function attachmentExt(contentType: string): string {
+  switch (contentType) {
+    case "application/pdf":
+      return "pdf";
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      return "docx";
+    case "application/msword":
+      return "doc";
+    case "text/markdown":
+      return "md";
+    default:
+      return "txt";
+  }
+}
 
 /** Map a pamphlet row (with relations) to the public PamphletSummary shape. */
 export function toPamphletSummary(p: PamphletSummaryRow): PamphletSummary {
@@ -44,6 +73,9 @@ export function toPamphletSummary(p: PamphletSummaryRow): PamphletSummary {
   const ratingAvg = ratings.length
     ? round1(ratings.reduce((s, r) => s + r, 0) / ratings.length)
     : 0;
+  const newest = [...p.attachments].sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+  )[0];
   return {
     id: p.id,
     title: p.title,
@@ -65,6 +97,8 @@ export function toPamphletSummary(p: PamphletSummaryRow): PamphletSummary {
       fullName: p.author.fullName,
       title: p.author.title,
     },
+    hasAttachment: p.attachments.length > 0,
+    attachmentType: newest ? attachmentExt(newest.contentType) : null,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   };

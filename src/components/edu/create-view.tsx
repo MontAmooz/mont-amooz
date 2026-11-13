@@ -2,8 +2,8 @@
 
 // مُنت‌آموز — create pamphlet view (auth required): 3-step wizard.
 
-import { ArrowRight, Check, Upload } from "lucide-react";
-import { Fragment, useState } from "react";
+import { ArrowRight, Check, Paperclip, Upload, X } from "lucide-react";
+import { Fragment, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/client";
 import { DIFFICULTIES, GRADES, SUBJECTS, TEACHING_METHODS } from "@/lib/constants";
-import { faNumber } from "@/lib/format";
+import { faFileSize, faNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { AuthRequiredBox, PageSkeleton, Spinner } from "./bits";
 import { ContentEditor } from "./content-editor";
@@ -86,6 +86,14 @@ export function CreateView() {
   });
   const [errors, setErrors] = useState<Partial<Record<keyof CreateForm, string>>>({});
   const [publishing, setPublishing] = useState(false);
+  // ADR-0012 — optional attachment held client-side until after the pamphlet POST
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function pickAttachment(f: File | null) {
+    setAttachment(f);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   if (!sessionLoaded) {
     return <PageSkeleton />;
@@ -144,6 +152,21 @@ export function CreateView() {
           content: form.content,
         },
       });
+      // ADR-0012 — attachment upload happens after the pamphlet exists; a
+      // failed upload never blocks the publication (attachment is optional).
+      if (attachment) {
+        try {
+          const fd = new FormData();
+          fd.append("file", attachment);
+          await api(`/pamphlets/${id}/attachments`, { method: "POST", form: fd });
+        } catch (err) {
+          toast({
+            title: "جزوه منتشر شد، اما آپلود پیوست ناموفق بود",
+            description: err instanceof Error ? err.message : undefined,
+            variant: "destructive",
+          });
+        }
+      }
       toast({
         title: "جزوه شما منتشر شد!",
         description: "نامتان برای همیشه کنارش می‌ماند؛ منتظر بازخورد جامعه باشید.",
@@ -309,6 +332,58 @@ export function CreateView() {
         )}
         {step === 1 && errors.content && (
           <p className="mt-2 text-xs font-bold text-danger" role="alert">{errors.content}</p>
+        )}
+
+        {step === 1 && (
+          <div className="mt-6 border-t-2 border-dashed border-gray-200 pt-5">
+            <Label className="text-sm font-black">پیوست (اختیاری)</Label>
+            <p className="mt-1 text-xs leading-6 text-gray-500">
+              اگر جزوهٔ شما Word یا PDF است، فایلش را پیوست کنید تا دانلود و نمایش داده شود —
+              محتوای متنی هنوز همان Markdown است. حداکثر ۲۰ مگابایت.
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,.doc,.md,.txt"
+              className="sr-only"
+              id="create-attachment"
+              aria-label="انتخاب فایل پیوست"
+              onChange={(e) => pickAttachment(e.target.files?.[0] ?? null)}
+            />
+            {attachment ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-2 border-ink bg-gray-50 p-3">
+                <Paperclip className="size-4 text-primary" aria-hidden="true" />
+                <span className="min-w-0 break-all text-sm font-bold">{attachment.name}</span>
+                <span className="text-xs text-gray-400">{faFileSize(attachment.size)}</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => pickAttachment(null)}
+                  className="ms-auto h-9 border-2 border-ink font-bold"
+                >
+                  <X className="size-4" aria-hidden="true" /> حذف
+                </Button>
+              </div>
+            ) : (
+              <label
+                htmlFor="create-attachment"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const f = e.dataTransfer.files?.[0];
+                  if (f) pickAttachment(f);
+                }}
+                className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center transition-colors hover:border-primary hover:bg-primary/5"
+              >
+                <Upload className="size-5 text-gray-400" aria-hidden="true" />
+                <span className="text-sm font-bold text-gray-600">
+                  فایل را اینجا رها کنید یا برای انتخاب کلیک کنید
+                </span>
+                <span className="text-xs text-gray-400">PDF، Word، Markdown، متن</span>
+              </label>
+            )}
+          </div>
         )}
 
         {step === 2 && (
