@@ -1,6 +1,11 @@
 # ADR-0007 — محتوای جزوه: Markdown در دیتابیس (تا MinIO)
 
 <!--
+SUPERSEDED by ADR-0012 (2026-11-13) — content stays Markdown, but optional PDF/Word
+attachments were added. See docs/adr/0012-pamphlet-attachments.md.
+-->
+
+<!--
 NOTE (2026-11-01): The project was renamed from "OpenEdu Git" to مُنت‌آموز / MontAmooz.
 Name references in this ADR body were updated to the new name; all other content is unchanged.
 See ADR-0011 for the rename decision.

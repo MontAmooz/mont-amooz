@@ -1,9 +1,9 @@
 "use client";
 
 // مُنت‌آموز — pamphlet detail view: header, actions (fork/edit/propose-merge),
-// GitHub-style tabs: محتوا / تاریخچه / مشارکت‌کنندگان / بازخوردها / درخواست‌های ادغام.
+// GitHub-style tabs: محتوا / پیوست‌ها / تاریخچه / مشارکت‌کنندگان / بازخوردها / درخواست‌های ادغام.
 
-import { GitMerge, Pencil, Star, ThumbsDown, ThumbsUp, ArrowRight, Eye, GitFork, History } from "lucide-react";
+import { GitMerge, Pencil, Star, ThumbsDown, ThumbsUp, ArrowRight, Eye, GitFork, History, Paperclip, Download, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/client";
 import { DIFFICULTY_STYLES, METHOD_STYLES } from "@/lib/constants";
-import { faNumber, faRating, faRelative, toFaDigits } from "@/lib/format";
+import { faFileSize, faNumber, faRating, faRelative, toFaDigits } from "@/lib/format";
 import type {
   MergeRequestItem,
   PamphletDetail,
@@ -195,6 +195,9 @@ export function PamphletView({ id }: { id: string }) {
   const { user, openAuth } = useEduStore();
 
   const [tab, setTab] = useState("content");
+  // ADR-0012 — the PDF-first default tab applies only until the user picks one
+  const [tabTouched, setTabTouched] = useState(false);
+  const [deletingAttachmentId, setDeletingAttachmentId] = useState<string | null>(null);
   const [forking, setForking] = useState(false);
   const [mrOpen, setMrOpen] = useState(false);
   const [mrTitle, setMrTitle] = useState("");
@@ -225,6 +228,28 @@ export function PamphletView({ id }: { id: string }) {
     setPrevId(id);
     setMrTitle("");
     setMrDesc("");
+  }
+
+  async function deleteAttachment(attachmentId: string) {
+    setDeletingAttachmentId(attachmentId);
+    try {
+      await api(`/attachments/${attachmentId}`, { method: "DELETE" });
+      toast({
+        title: "پیوست حذف شد",
+        description: "فایل پیوست از این جزوه برداشته شد.",
+      });
+      setTab("content");
+      setTabTouched(false);
+      detail.retry();
+    } catch (err) {
+      toast({
+        title: "حذف پیوست ناموفق بود",
+        description: err instanceof Error ? err.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingAttachmentId(null);
+    }
   }
 
   async function handleFork() {
@@ -353,6 +378,15 @@ export function PamphletView({ id }: { id: string }) {
 
   const myUserId = user?.id;
   const sortedVersions = [...p.versions].sort((a, b) => b.versionNumber - a.versionNumber);
+
+  // ADR-0012 — a short pamphlet with a PDF attachment is a PDF-first pamphlet:
+  // land on پیوست‌ها instead of محتوا (until the user picks a tab themselves).
+  const pdfFirst =
+    p.content.length < 200 &&
+    p.attachments.some((a) => a.contentType === "application/pdf");
+  if (pdfFirst && !tabTouched && tab !== "attachments") {
+    setTab("attachments");
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -486,7 +520,14 @@ export function PamphletView({ id }: { id: string }) {
       </div>
 
       {/* tabs */}
-      <Tabs value={tab} onValueChange={setTab} className="mt-8">
+      <Tabs
+        value={tab}
+        onValueChange={(v) => {
+          setTabTouched(true);
+          setTab(v);
+        }}
+        className="mt-8"
+      >
         <TabsList className="h-auto w-full justify-start gap-0 rounded-none border-b-2 border-gray-200 bg-transparent p-0 sm:w-fit">
           <TabsTrigger
             value="content"
@@ -494,6 +535,17 @@ export function PamphletView({ id }: { id: string }) {
           >
             محتوا
           </TabsTrigger>
+          {p.attachments.length > 0 && (
+            <TabsTrigger
+              value="attachments"
+              className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-bold text-gray-500 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+            >
+              پیوست‌ها
+              <span className="oeg-mono ms-1 bg-gray-100 px-1.5 text-xs">
+                {faNumber(p.attachments.length)}
+              </span>
+            </TabsTrigger>
+          )}
           <TabsTrigger
             value="history"
             className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-bold text-gray-500 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
@@ -531,10 +583,64 @@ export function PamphletView({ id }: { id: string }) {
 
         {/* محتوا */}
         <TabsContent value="content" className="mt-4">
+          {pdfFirst && (
+            <div className="mb-4 border-2 border-gold bg-gold/10 p-3 text-sm font-medium text-[#7a5c1e]">
+              این جزوه به‌صورت PDF ارائه شده است — از تب «پیوست‌ها» ببینید یا دانلود کنید.
+            </div>
+          )}
           <div className="border-2 border-ink bg-white p-4 md:p-8">
             <MarkdownViewer content={p.content} />
           </div>
         </TabsContent>
+
+        {/* پیوست‌ها (ADR-0012) */}
+        {p.attachments.length > 0 && (
+          <TabsContent value="attachments" className="mt-4 space-y-4">
+            {p.attachments.map((a) => (
+              <div key={a.id} className="border-2 border-ink bg-white">
+                <div className="flex flex-wrap items-center gap-3 border-b-2 border-gray-100 p-4">
+                  <Paperclip className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="min-w-0 break-all text-sm font-black">{a.fileName}</span>
+                  <span className="text-xs text-gray-400">
+                    {faFileSize(a.sizeBytes)} · این پیوست در تاریخ {faRelative(a.createdAt)} آپلود شده است
+                  </span>
+                  <span className="ms-auto flex items-center gap-2">
+                    <Button variant="outline" size="sm" asChild
+                      className="h-9 border-2 border-ink font-bold">
+                      <a href={a.signedUrl} download={a.fileName}>
+                        <Download className="size-4" aria-hidden="true" /> دانلود
+                      </a>
+                    </Button>
+                    {p.isMine && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={deletingAttachmentId === a.id}
+                        onClick={() => void deleteAttachment(a.id)}
+                        aria-label={`حذف پیوست ${a.fileName}`}
+                        className="h-9 border-2 border-danger font-bold text-danger hover:bg-danger/10"
+                      >
+                        {deletingAttachmentId === a.id ? <Spinner /> : <Trash2 className="size-4" aria-hidden="true" />}
+                        حذف
+                      </Button>
+                    )}
+                  </span>
+                </div>
+                {a.contentType === "application/pdf" ? (
+                  <iframe
+                    src={a.signedUrl}
+                    className="h-[800px] w-full"
+                    title={a.fileName}
+                  />
+                ) : (
+                  <p className="p-4 text-xs text-gray-500">
+                    پیش‌نمایش این نوع فایل در دسترس نیست؛ برای مشاهده دانلود کنید.
+                  </p>
+                )}
+              </div>
+            ))}
+          </TabsContent>
+        )}
 
         {/* تاریخچه */}
         <TabsContent value="history" className="mt-4">

@@ -32,6 +32,8 @@ model User {
   reviewedRequests  MergeRequest[]     @relation("ReviewedMRs")
   contributions     Contribution[]
 
+  uploadedAttachments PamphletAttachment[] @relation("UploadedAttachments")
+
   // Phase 2 — teaching marketplace
   wallet            Wallet?
   txns              Txn[]
@@ -68,6 +70,7 @@ model Pamphlet {
   versions   PamphletVersion[]
   reviews    Review[]
   contributions Contribution[]
+  attachments PamphletAttachment[]
   sourceMRs  MergeRequest[]     @relation("MRSource")
   targetMRs  MergeRequest[]     @relation("MRTarget")
 
@@ -86,9 +89,33 @@ model PamphletVersion {
 
   pamphlet  Pamphlet @relation(fields: [pamphletId], references: [id], onDelete: Cascade)
   createdBy User     @relation(fields: [createdById], references: [id])
+  attachments PamphletAttachment[]
 
   @@unique([pamphletId, versionNumber])
   @@index([pamphletId])
+}
+
+// ADR-0012 — optional file attachment (PDF/Word/md/txt) alongside the
+// Markdown content. Stored on the local fs (`uploads/pamphlet-attachments/`,
+// gitignored); downloaded only through HMAC-signed URLs.
+model PamphletAttachment {
+  id            String   @id @default(cuid())
+  pamphletId    String
+  versionId     String
+  fileName      String
+  storageKey    String   @unique
+  contentType   String
+  sizeBytes     Int
+  extractedText String?
+  uploadedById  String
+  createdAt     DateTime @default(now())
+
+  pamphlet   Pamphlet        @relation(fields: [pamphletId], references: [id], onDelete: Cascade)
+  version    PamphletVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  uploadedBy User            @relation("UploadedAttachments", fields: [uploadedById], references: [id])
+
+  @@index([pamphletId])
+  @@index([versionId])
 }
 
 model Review {

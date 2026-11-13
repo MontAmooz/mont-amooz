@@ -37,11 +37,13 @@ export interface ApiOptions {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   /** JSON body — automatically serialized with the right Content-Type. */
   json?: unknown;
+  /** Multipart body (file uploads) — Content-Type is set by the browser. */
+  form?: FormData;
   signal?: AbortSignal;
 }
 
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
-  const { method = "GET", json, signal } = options;
+  const { method = "GET", json, form, signal } = options;
 
   let res: Response;
   try {
@@ -49,7 +51,12 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
       method,
       credentials: "same-origin",
       headers: json !== undefined ? { "Content-Type": "application/json" } : undefined,
-      body: json !== undefined ? JSON.stringify(json) : undefined,
+      body:
+        json !== undefined
+          ? JSON.stringify(json)
+          : form !== undefined
+            ? form
+            : undefined,
       signal,
     });
   } catch {

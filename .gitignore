@@ -63,14 +63,18 @@ db/*.db
 db/*.db-journal
 prisma/db/
 
+# ===== P9 / ADR-0012 — local attachment storage (never commit; backup via systemd timer) =====
+uploads/
+
 # second package manager (repo is bun-managed)
 package-lock.json
 mini-services/**/package-lock.json
 
-# agent / sandbox residue
+# agent / sandbox residue (root-anchored: `download/` unanchored also matched
+# src/app/api/v1/attachments/[id]/download/ and silently untracked a route file — P9)
 tool-results/
 agent-ctx/
-download/
+/download/
 .remember/
 .freebuff/
 

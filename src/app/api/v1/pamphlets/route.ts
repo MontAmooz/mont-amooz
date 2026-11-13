@@ -50,6 +50,11 @@ export async function GET(req: Request) {
     if (difficulty && p.difficulty !== difficulty) return false;
     if (nq) {
       const fields = [p.title, p.description ?? "", p.subject, p.chapter ?? "", latestContent(p.versions)];
+      // ADR-0012 — attachment extractedText is searchable too
+      const attachmentText = p.attachments
+        .map((a) => a.extractedText ?? "")
+        .join(" ");
+      if (attachmentText) fields.push(attachmentText);
       const matched = fields.some((f) => normalizePersian(f).includes(nq));
       if (!matched) return false;
     }
