@@ -14,8 +14,14 @@ export default defineConfig({
     hookTimeout: 60000,
     // Ensure AUTH_SECRET is set BEFORE any test imports src/lib/server/auth.ts
     // (that file throws at module load if SECRET is missing — see ADR-0004)
+    // AUTH_SECRET must INHERIT the ambient value instead of hard-overriding it:
+    // global-setup forwards process.env.AUTH_SECRET to the ephemeral server, and
+    // tests that sign URLs client-side (attachment downloads, ADR-0012) verify
+    // against the server's secret — a mismatch here 403s only on CI, where the
+    // job env sets its own value (P9 lesson).
     env: {
-      AUTH_SECRET: "test-secret-at-least-32-bytes-long-for-vitest-only",
+      AUTH_SECRET:
+        process.env.AUTH_SECRET || "test-secret-at-least-32-bytes-long-for-vitest-only",
       NODE_ENV: "test",
     },
     coverage: {
