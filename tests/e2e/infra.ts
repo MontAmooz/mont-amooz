@@ -58,7 +58,20 @@ function createChunkDecoder(onPiece: (b: Buffer) => void, onDone: () => void) {
 }
 
 function pipe(req: IncomingMessage, res: ServerResponse, port: number) {
-  const proxied = { ...req.headers, host: `localhost:${port}` };
+  // P10 — the app rate-limits auth endpoints per client IP. A real reverse
+  // proxy forwards the client's address; this gateway does the same with a
+  // per-request synthetic IP (unless the caller set one — rate-limit e2e
+  // tests pin a fixed IP to fill a bucket). One implicit "unknown" IP for a
+  // whole 41-test run would trip the 10/h login limit on its own.
+  const hasXff = Object.keys(req.headers).some((k) => k.toLowerCase() === "x-forwarded-for");
+  const proxied: Record<string, string | string[] | undefined> = {
+    ...req.headers,
+    host: `localhost:${port}`,
+  };
+  if (!hasXff) {
+    proxied["x-forwarded-for"] =
+      `10.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+  }
   const upstream = net.connect(port, "127.0.0.1", () => {
     upstream.write(
       `${req.method} ${req.url} HTTP/1.1\r\n` +

@@ -61,7 +61,8 @@ export const DIFFICULTY_STYLES: Record<string, string> = {
 };
 
 export const SESSION_COOKIE = "ma_session";
-export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+export const SESSION_MAX_AGE = 60 * 60 * 24; // 24h — standard login (P10)
+export const SESSION_MAX_AGE_REMEMBER = 60 * 60 * 24 * 30; // 30d — «مرا به خاطر بسپار» (P10)
 
 export const SORT_OPTIONS = [
   { value: "newest", label: "جدیدترین" },

@@ -12,6 +12,7 @@ import {
   PlayCircle,
   Plus,
   Search,
+  ShieldCheck,
   User,
   Users,
   Video,
@@ -235,6 +236,14 @@ export function Navbar() {
                 >
                   <Video className="size-4" aria-hidden="true" /> پنل تدریس
                 </DropdownMenuItem>
+                {user.isAdmin && (
+                  <DropdownMenuItem
+                    className="h-11 cursor-pointer gap-2 font-bold"
+                    onClick={() => navigate("#/admin")}
+                  >
+                    <ShieldCheck className="size-4" aria-hidden="true" /> پنل مدیریت
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="h-11 cursor-pointer gap-2 font-bold text-danger focus:text-danger"

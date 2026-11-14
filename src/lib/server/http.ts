@@ -1,6 +1,15 @@
 // مُنت‌آموز — shared HTTP helpers for /api/v1 route handlers.
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "./auth";
+import type { RateLimitError } from "./rate-limit";
+
+/** 429 with Retry-After for a tripped rate limit. */
+export function failRateLimit(e: RateLimitError): NextResponse {
+  return NextResponse.json(
+    { error: e.message },
+    { status: 429, headers: { "Retry-After": String(e.retryAfterSec) } }
+  );
+}
 
 /** JSON success response. */
 export function ok(data: unknown, status = 200): NextResponse {

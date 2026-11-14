@@ -38,11 +38,14 @@ export function AuthDialog() {
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
 
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regRole, setRegRole] = useState<string>(ROLES[0]);
+  // P10 — honeypot: visually hidden, tabbable=false; humans never fill it
+  const [websiteHoneypot, setWebsiteHoneypot] = useState("");
 
   // Reset stale error/busy whenever the dialog reopens — adjust state during
   // render on prop change (react.dev/learn/you-might-not-need-an-effect).
@@ -78,12 +81,13 @@ export function AuthDialog() {
     try {
       const body =
         mode === "login"
-          ? { email: loginEmail.trim(), password: loginPassword }
+          ? { email: loginEmail.trim(), password: loginPassword, rememberMe }
           : {
               email: regEmail.trim(),
               password: regPassword,
               fullName: regName.trim(),
               role: regRole,
+              website: websiteHoneypot, // honeypot — must stay empty
             };
       const { user } = await api<{ user: PublicUser }>(
         mode === "login" ? "/auth/login" : "/auth/register",
@@ -93,6 +97,7 @@ export function AuthDialog() {
       closeAuth();
       setLoginPassword("");
       setRegPassword("");
+      setWebsiteHoneypot("");
       toast({
         title: `خوش آمدید ${user.fullName}!`,
         description: "حالا می‌توانید جزوه بگذارید، فورک کنید و بازخورد بدهید.",
@@ -162,6 +167,15 @@ export function AuthDialog() {
                   className="h-11 border-2 bg-white md:h-10"
                 />
               </div>
+              <label className="mt-1 flex cursor-pointer items-center gap-2 text-sm font-bold text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="size-4 accent-primary"
+                />
+                مرا به خاطر بسپار (۳۰ روز)
+              </label>
               {errorBox}
               <Button type="submit" disabled={busy} className="h-11 w-full border-2 border-ink font-black md:h-10">
                 {busy && <Spinner />} ورود به حساب
@@ -182,6 +196,20 @@ export function AuthDialog() {
                 void submit("register");
               }}
             >
+              {/* P10 — honeypot: invisible to humans, irresistible to bots */}
+              <div style={{ position: "absolute", left: "-9999px", opacity: 0 }} aria-hidden="true">
+                <label>
+                  Website (leave blank)
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={websiteHoneypot}
+                    onChange={(e) => setWebsiteHoneypot(e.target.value)}
+                  />
+                </label>
+              </div>
               <div className="space-y-1.5">
                 <Label htmlFor="reg-name" className="text-sm font-black">نام و نام‌خانوادگی</Label>
                 <Input

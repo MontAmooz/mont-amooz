@@ -10,7 +10,12 @@ export default defineConfig({
     exclude: ["node_modules", ".next", "mini-services/**"],
     environment: "node",
     globals: false,
-    testTimeout: 15000,
+    // 15s (P4) began timing out on FIRST-CONTACT route compiles once P9 added
+    // heavy route deps (mammoth/pdfjs) — and whichever test hits a cold route
+    // first eats the compile, so per-file warmups can't cover it. 30s covers
+    // cold compiles under memory pressure without masking real hangs (hook
+    // timeout below stays 60s, and CI's job-level budget is minutes).
+    testTimeout: 30000,
     hookTimeout: 60000,
     // Ensure AUTH_SECRET is set BEFORE any test imports src/lib/server/auth.ts
     // (that file throws at module load if SECRET is missing — see ADR-0004)

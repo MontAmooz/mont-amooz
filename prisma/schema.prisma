@@ -21,6 +21,7 @@ model User {
   bio          String?
   expertise    String? // comma-separated Persian tags
   role         String   @default("معلم") // معلم | دانش‌آموز | تایپیست | برنامه‌نویس
+  isAdmin      Boolean  @default(false) // founder-only admin panel access (P10)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -33,6 +34,8 @@ model User {
   contributions     Contribution[]
 
   uploadedAttachments PamphletAttachment[] @relation("UploadedAttachments")
+  passwordResets    PasswordResetToken[] @relation("PasswordResets")
+  issuedResets      PasswordResetToken[] @relation("IssuedResets")
 
   // Phase 2 — teaching marketplace
   wallet            Wallet?
@@ -361,4 +364,34 @@ model LessonProgress {
   user   User        @relation(fields: [userId], references: [id])
 
   @@unique([lessonId, userId])
+}
+
+// ===================== P10 — Auth Hardening =====================
+
+// One row per rate-limited attempt (P10). Counted per key within the window;
+// rows older than 24h are swept fire-and-forget after each check.
+model RateLimitAttempt {
+  id        String   @id @default(cuid())
+  key       String // "login:1.2.3.4" | "register:1.2.3.4" | "reset:1.2.3.4" | "pwchange:uid"
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
+// Admin-issued password reset token (P10). No email infra — the admin hands
+// the 32-char token to the user over WhatsApp/Telegram; user redeems it at
+// #/reset. Single use, 24h expiry; issuing invalidates previous unused tokens.
+model PasswordResetToken {
+  id          String    @id @default(cuid())
+  userId      String
+  token       String    @unique // 32-char hex
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  user      User @relation("PasswordResets", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User @relation("IssuedResets", fields: [createdById], references: [id])
+
+  @@index([userId])
 }

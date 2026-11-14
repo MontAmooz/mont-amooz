@@ -2,7 +2,7 @@
 
 // مُنت‌آموز — public profile view (#/user/{id}) + own-profile variant with edit dialog (#/profile).
 
-import { Award, CalendarClock, Code, FileText, GitMerge, GraduationCap, Pencil, PlayCircle, Star } from "lucide-react";
+import { Award, CalendarClock, Code, FileText, GitMerge, GraduationCap, KeyRound, Pencil, PlayCircle, Star } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,105 @@ import { useEduStore } from "./store";
 interface ProfileWithMarket extends UserProfile {
   teach?: UserProfileTeach;
   courses?: CourseCard[];
+}
+
+/** P10 — user-initiated password change (knows the current password). */
+function ChangePasswordCard() {
+  const { toast } = useToast();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (next !== confirm) {
+      toast({
+        title: "تکرار رمز مطابقت ندارد",
+        description: "رمز جدید و تکرار آن باید یکسان باشند.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setBusy(true);
+    try {
+      await api("/users/me/password", {
+        method: "POST",
+        json: { currentPassword: current, newPassword: next },
+      });
+      toast({
+        title: "رمز عبور تغییر کرد",
+        description: "از این پس با رمز جدید وارد شوید.",
+      });
+      setCurrent("");
+      setNext("");
+      setConfirm("");
+    } catch (err) {
+      toast({
+        title: "تغییر رمز ناموفق بود",
+        description: err instanceof Error ? err.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="border-2 border-ink bg-white p-5"
+      aria-label="تغییر رمز عبور"
+    >
+      <h3 className="flex items-center gap-2 font-black">
+        <KeyRound className="size-4 text-primary" aria-hidden="true" /> تغییر رمز عبور
+      </h3>
+      <p className="mt-1 text-xs leading-6 text-gray-500">
+        رمز فعلی را برای اثبات هویت وارد کنید؛ رمز جدید حداقل ۸ کاراکتر است.
+      </p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="pw-current" className="text-sm font-black">رمز فعلی</Label>
+          <Input
+            id="pw-current"
+            dir="ltr"
+            type="password"
+            autoComplete="current-password"
+            value={current}
+            onChange={(e) => setCurrent(e.target.value)}
+            className="h-11 border-2 bg-white md:h-10"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="pw-new" className="text-sm font-black">رمز جدید</Label>
+          <Input
+            id="pw-new"
+            dir="ltr"
+            type="password"
+            autoComplete="new-password"
+            value={next}
+            onChange={(e) => setNext(e.target.value)}
+            className="h-11 border-2 bg-white md:h-10"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="pw-confirm" className="text-sm font-black">تکرار رمز جدید</Label>
+          <Input
+            id="pw-confirm"
+            dir="ltr"
+            type="password"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            className="h-11 border-2 bg-white md:h-10"
+          />
+        </div>
+      </div>
+      <Button type="submit" disabled={busy} className="mt-4 h-11 border-2 border-ink font-black md:h-10">
+        {busy && <Spinner />} تغییر رمز
+      </Button>
+    </form>
+  );
 }
 
 function EditProfileDialog({
@@ -327,6 +426,16 @@ export function ProfileView({ id, isMe }: { id: string; isMe?: boolean }) {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {/* P10 — password change (own profile only) */}
+      {isMe && (
+        <section className="mt-10" aria-label="امنیت حساب">
+          <h2 className="text-xl font-black md:text-2xl">امنیت حساب</h2>
+          <div className="mt-4">
+            <ChangePasswordCard />
+          </div>
         </section>
       )}
 

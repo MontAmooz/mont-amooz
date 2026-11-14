@@ -2,12 +2,20 @@
 // Upload (multipart), listing, signed download, deletion. The ephemeral server
 // signs/verifies with the same AUTH_SECRET vitest provides, so expired/tampered
 // URLs are minted locally via the storage helpers.
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, beforeAll } from "vitest";
 import fs from "node:fs";
 import { api, createPamphlet, registerUser } from "../helpers/server";
 import { signedDownloadUrl } from "../../src/lib/server/storage";
 
 const baseUrl = () => fs.readFileSync("/tmp/oeg-test-url.txt", "utf8").trim();
+
+// Warm the upload route once: its first Turbopack compile pulls mammoth +
+// pdf-parse/pdfjs and can exceed the 15s per-test timeout on a cold server
+// (seen twice as a 242/1 flake). beforeAll runs under the 60s hookTimeout.
+beforeAll(async () => {
+  const warm = await api(baseUrl(), "/api/v1/pamphlets/warm/attachments", { method: "POST" });
+  expect([401, 404]).toContain(warm.status); // 401 (route exists) is the goal
+}, 60_000);
 
 const PDF_MIME = "application/pdf";
 const MD_MIME = "text/markdown";

@@ -1,14 +1,30 @@
 // POST /api/v1/auth/register — create account + session
+// P10: rate-limited per IP (3/h) + honeypot field (`website` — bots fill it,
+// humans never see it).
 import { db } from "@/lib/db";
 import { ROLES } from "@/lib/constants";
 import { hashPassword, setSessionCookie, toPublicUser } from "@/lib/server/auth";
-import { asString, fail, ok, oneOf, readJson } from "@/lib/server/http";
+import { asString, fail, failRateLimit, ok, oneOf, readJson } from "@/lib/server/http";
+import { checkRateLimit, getClientIp, RateLimitError } from "@/lib/server/rate-limit";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
   const body = await readJson(req);
   if (!body) return fail("داده‌های ارسالی نامعتبر است");
+
+  // P10 — honeypot: a filled "website" field means a bot (the input is visually
+  // hidden and tabbable=false in the dialog). Generic message, no hints.
+  if (asString(body.website)?.trim()) {
+    return fail("درخواست نامعتبر");
+  }
+
+  try {
+    await checkRateLimit(`register:${getClientIp(req)}`, 3, 3600);
+  } catch (e) {
+    if (e instanceof RateLimitError) return failRateLimit(e);
+    throw e;
+  }
 
   const email = asString(body.email)?.trim().toLowerCase() ?? "";
   if (!email || !EMAIL_RE.test(email) || email.length > 254) {
@@ -20,7 +36,7 @@ export async function POST(req: Request) {
   }
   const fullName = asString(body.fullName)?.trim() ?? "";
   if (fullName.length < 2 || fullName.length > 80) {
-    return fail("نام و نام خانوادگی باید بین ۲ تا ۸۰ نویسه باشد");
+    return fail("نام و نام‌خانوادگی باید بین ۲ تا ۸۰ نویسه باشد");
   }
   let role = "معلم";
   if (body.role !== undefined && body.role !== null) {

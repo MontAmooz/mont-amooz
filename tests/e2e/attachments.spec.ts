@@ -140,7 +140,10 @@ test("owner can delete the attachment — the tab disappears", async ({ page }) 
 
   // the button's accessible name is «حذف پیوست sample.pdf» (aria-label)
   await p.getByRole("button", { name: /حذف/ }).click();
-  await expect(tab).toBeHidden({ timeout: 10000 });
+  // The DELETE is the first hit of that route module → Turbopack compiles it
+  // on demand; under memory pressure that takes >10s (P10 lesson — same class
+  // as the vitest cold-compile timeouts), so give the tab removal a wide window.
+  await expect(tab).toBeHidden({ timeout: 30000 });
   await expect(p.getByRole("tab", { name: "محتوا" })).toHaveAttribute("aria-selected", "true");
   await p.context().close();
 });

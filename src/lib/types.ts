@@ -7,7 +7,22 @@ export interface PublicUser {
   bio?: string | null;
   expertise?: string | null;
   role: string;
+  /** P10 — founder-only admin flag (drives the پنل مدیریت UI guard). */
+  isAdmin?: boolean;
   createdAt: string;
+}
+
+/** P10 — row of GET /admin/users (founder-only user management). */
+export interface AdminUserRow {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+  isAdmin: boolean;
+  createdAt: string;
+  walletBalance: number | null;
+  pamphletCount: number;
+  enrollmentCount: number;
 }
 
 export interface PamphletAuthor {

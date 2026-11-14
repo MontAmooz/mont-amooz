@@ -42,6 +42,7 @@ async function main() {
         email: "montajebii@montamooz.ir", passwordHash: pw,
         fullName: "محمدرضا منتجبی", title: "آقای",
         role: "معلم",
+        isAdmin: true, // founder — the only admin (P10 admin panel)
         bio: "معلم ریاضی مدارس دولتی و نمونه؛ باور دارم بهترین آموزگار، جامعه است. بنیان‌گذار اُپن‌ای‌دیو گیت.",
         expertise: "حسابان,هندسه,ریاضی دوازدهم,کنکور ریاضی",
         createdAt: daysAgo(120),
