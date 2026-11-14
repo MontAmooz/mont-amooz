@@ -2,7 +2,6 @@
 import { describe, test, expect } from "vitest";
 import { execSync } from "node:child_process";
 import fs from "node:fs";
-import { globSync } from "node:fs";
 import { api, DEMO_USERS, loginAs, registerUser } from "../helpers/server";
 
 const baseUrl = () => fs.readFileSync("/tmp/oeg-test-url.txt", "utf8").trim();
@@ -217,8 +216,12 @@ describe("POST /auth/reset/confirm", () => {
     // The vitest run has one throwaway DB (/tmp/oeg-test-*.db) — rewind the
     // token's expiry to exercise the expiry branch. Stale DBs from crashed
     // prior runs may exist, so UPDATE across all of them: only the one holding
-    // this unique token is affected.
-    const dbs = globSync("/tmp/oeg-test-*.db").filter((p) => !p.includes("-journal"));
+    // this unique token is affected. (readdirSync — fs.globSync is Node 22+;
+    // CI runs Node 20.)
+    const dbs = fs
+      .readdirSync("/tmp")
+      .filter((f) => /^oeg-test-\d+\.db$/.test(f))
+      .map((f) => `/tmp/${f}`);
     expect(dbs.length).toBeGreaterThan(0);
     for (const dbPath of dbs) {
       execSync(
