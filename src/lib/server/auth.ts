@@ -42,9 +42,9 @@ function sign(data: string): string {
   return crypto.createHmac("sha256", SECRET).update(data).digest("base64url");
 }
 
-export function createSessionToken(userId: string): string {
+export function createSessionToken(userId: string, ttlMs: number = SESSION_MAX_AGE * 1000): string {
   const payload = b64url(
-    JSON.stringify({ uid: userId, iat: Date.now(), exp: Date.now() + SESSION_MAX_AGE * 1000 })
+    JSON.stringify({ uid: userId, iat: Date.now(), exp: Date.now() + ttlMs })
   );
   return `${payload}.${sign(payload)}`;
 }
@@ -69,14 +69,17 @@ export function parseSessionToken(token: string | undefined | null): string | nu
 
 // ---------- cookie helpers ----------
 
-export async function setSessionCookie(userId: string): Promise<void> {
+export async function setSessionCookie(
+  userId: string,
+  maxAgeSec: number = SESSION_MAX_AGE
+): Promise<void> {
   const store = await cookies();
-  store.set(SESSION_COOKIE, createSessionToken(userId), {
+  store.set(SESSION_COOKIE, createSessionToken(userId, maxAgeSec * 1000), {
     httpOnly: true,
     sameSite: "lax",
     secure: false, // sandbox runs behind http proxy
     path: "/",
-    maxAge: SESSION_MAX_AGE,
+    maxAge: maxAgeSec,
   });
 }
 
@@ -94,7 +97,7 @@ export async function getCurrentUser() {
     where: { id: uid },
     select: {
       id: true, email: true, fullName: true, title: true, bio: true,
-      expertise: true, role: true, createdAt: true, updatedAt: true,
+      expertise: true, role: true, isAdmin: true, createdAt: true, updatedAt: true,
     },
   });
 }
@@ -102,7 +105,7 @@ export async function getCurrentUser() {
 /** Public user shape (no email). */
 export function toPublicUser(u: {
   id: string; fullName: string; title?: string | null; bio?: string | null;
-  expertise?: string | null; role: string; createdAt: Date;
+  expertise?: string | null; role: string; isAdmin?: boolean; createdAt: Date;
 }) {
   return {
     id: u.id,
@@ -111,6 +114,7 @@ export function toPublicUser(u: {
     bio: u.bio,
     expertise: u.expertise,
     role: u.role,
+    isAdmin: u.isAdmin ?? false,
     createdAt: u.createdAt.toISOString(),
   };
 }

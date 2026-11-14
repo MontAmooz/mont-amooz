@@ -9,6 +9,13 @@ import fs from "node:fs";
 // globalSetup). Workers read the url through the handshake file.
 const baseUrl = () => fs.readFileSync("/tmp/oeg-test-url.txt", "utf8").trim();
 
+// P10 — auth endpoints are rate-limited per IP; give each call its own
+// synthetic client IP (same pattern as the api() helper) so this file's
+// registers/logins don't exhaust a shared bucket.
+const xff = () => ({
+  "X-Forwarded-For": `10.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+});
+
 let testEmail: string;
 let sessionCookie: string;
 
@@ -20,7 +27,7 @@ describe("Auth — register", () => {
   test("valid payload returns 201 + PublicUser without email", async () => {
     const res = await fetch(`${baseUrl()}/api/v1/auth/register`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...xff() },
       body: JSON.stringify({
         email: testEmail,
         password: "test-password-1234",
@@ -38,7 +45,7 @@ describe("Auth — register", () => {
   test("duplicate email returns 409", async () => {
     const res = await fetch(`${baseUrl()}/api/v1/auth/register`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...xff() },
       body: JSON.stringify({
         email: testEmail,
         password: "another-password",
@@ -53,7 +60,7 @@ describe("Auth — register", () => {
   test("short password returns 400", async () => {
     const res = await fetch(`${baseUrl()}/api/v1/auth/register`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...xff() },
       body: JSON.stringify({
         email: `short-${Date.now()}@example.com`,
         password: "123",
@@ -66,7 +73,7 @@ describe("Auth — register", () => {
   test("invalid email returns 400", async () => {
     const res = await fetch(`${baseUrl()}/api/v1/auth/register`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...xff() },
       body: JSON.stringify({
         email: "not-an-email",
         password: "long-enough-password",
@@ -79,7 +86,7 @@ describe("Auth — register", () => {
   test("invalid role returns 400", async () => {
     const res = await fetch(`${baseUrl()}/api/v1/auth/register`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...xff() },
       body: JSON.stringify({
         email: `role-${Date.now()}@example.com`,
         password: "long-enough-password",
@@ -95,7 +102,7 @@ describe("Auth — login", () => {
   test("valid creds return 200 + set ma_session cookie", async () => {
     const res = await fetch(`${baseUrl()}/api/v1/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...xff() },
       body: JSON.stringify({ email: testEmail, password: "test-password-1234" }),
     });
     expect(res.status).toBe(200);
@@ -108,7 +115,7 @@ describe("Auth — login", () => {
   test("bad password returns 401", async () => {
     const res = await fetch(`${baseUrl()}/api/v1/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...xff() },
       body: JSON.stringify({ email: testEmail, password: "wrong-password" }),
     });
     expect(res.status).toBe(401);
@@ -117,7 +124,7 @@ describe("Auth — login", () => {
   test("missing fields returns 400", async () => {
     const res = await fetch(`${baseUrl()}/api/v1/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...xff() },
       body: JSON.stringify({ email: "" }),
     });
     expect(res.status).toBe(400);

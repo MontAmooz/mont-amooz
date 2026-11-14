@@ -4,6 +4,7 @@
 // Layout: sticky navbar / main (route switch) / sticky footer + global auth dialog.
 
 import { useEffect, useRef } from "react";
+import { AdminView } from "@/components/edu/admin-view";
 import { AuthDialog } from "@/components/edu/auth-dialog";
 import { AuthRequiredBox } from "@/components/edu/bits";
 import BookView from "@/components/edu/book-view";
@@ -20,6 +21,7 @@ import MarketView from "@/components/edu/market-view";
 import { Navbar } from "@/components/edu/navbar";
 import { PamphletView } from "@/components/edu/pamphlet-view";
 import { ProfileView } from "@/components/edu/profile-view";
+import { ResetConfirmView } from "@/components/edu/reset-view";
 import { RequestDetailView } from "@/components/edu/request-detail-view";
 import { RequestsView } from "@/components/edu/requests-view";
 import { useHashRoute } from "@/components/edu/router";
@@ -135,6 +137,19 @@ export default function Page() {
             />
           </div>
         );
+      // ----- P10 — auth hardening -----
+      case "admin":
+        if (!sessionLoaded) return null;
+        return user ? <AdminView /> : (
+          <div className="mx-auto max-w-7xl px-4 py-16">
+            <AuthRequiredBox
+              title="برای مشاهدهٔ پنل مدیریت وارد حساب کاربری شوید"
+              hint="این بخش فقط برای مدیر سایت است."
+            />
+          </div>
+        );
+      case "reset":
+        return <ResetConfirmView />;
       default:
         return <HomeView params={{}} />;
     }

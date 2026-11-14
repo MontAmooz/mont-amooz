@@ -50,6 +50,7 @@ export async function PATCH(req: Request) {
       bio: true,
       expertise: true,
       role: true,
+      isAdmin: true,
       createdAt: true,
     },
   });

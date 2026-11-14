@@ -174,11 +174,19 @@ export const DEMO_USERS = {
   student: { email: "hossein@montamooz.ir", password: "123456" },
 } as const;
 
+/** Unique synthetic client IP per call — P10: auth endpoints are rate-limited
+ * per IP, so the helpers must not share one "unknown" bucket. */
+function randomXff(): Record<string, string> {
+  return {
+    "X-Forwarded-For": `10.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+  };
+}
+
 /** Login as an existing (demo) user → "ma_session=..." cookie. */
 export async function loginAs(baseUrl: string, email: string, password = "123456"): Promise<string> {
   const res = await fetch(`${baseUrl}/api/v1/auth/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...randomXff() },
     body: JSON.stringify({ email, password }),
   });
   if (res.status !== 200) throw new Error(`Login failed for ${email}: ${res.status}`);
@@ -196,7 +204,7 @@ export async function registerUser(
     overrides.email ?? `test-${Date.now()}-${Math.random().toString(36).slice(2)}@montamooz.ir`;
   const res = await fetch(`${baseUrl}/api/v1/auth/register`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...randomXff() },
     body: JSON.stringify({
       email,
       password: overrides.password ?? "test-password-1234",
@@ -210,15 +218,25 @@ export async function registerUser(
   return { cookie, user: body.user };
 }
 
-/** Small JSON API helper with cookie support. */
+/** Small JSON API helper with cookie support.
+ *
+ * P10: every call carries a unique X-Forwarded-For unless the caller sets one —
+ * auth endpoints are rate-limited per IP now (register 3/h!), and a whole
+ * integration run from one implicit "unknown" IP would trip its own limits.
+ * Rate-limit tests pass a FIXED header to fill a shared bucket deliberately. */
 export async function api<T = unknown>(
   baseUrl: string,
   path: string,
   init: RequestInit & { cookie?: string; json?: unknown } = {}
 ): Promise<{ status: number; data: T; headers: Headers }> {
   const { cookie, json, ...rest } = init;
+  const given = (init.headers as Record<string, string>) ?? {};
+  const hasXff = Object.keys(given).some((k) => k.toLowerCase() === "x-forwarded-for");
   const headers: Record<string, string> = {
-    ...((init.headers as Record<string, string>) ?? {}),
+    ...given,
+    ...(!hasXff
+      ? { "X-Forwarded-For": `10.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}` }
+      : {}),
     ...(json !== undefined ? { "Content-Type": "application/json" } : {}),
     ...(cookie ? { Cookie: cookie } : {}),
   };
