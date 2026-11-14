@@ -49,7 +49,9 @@ export type Route =
   | { name: "wallet" }
   // P10 — auth hardening
   | { name: "admin" }
-  | { name: "reset" };
+  | { name: "reset" }
+  // P11 — notifications
+  | { name: "notifications" };
 
 const HOME: Route = { name: "home", params: {} };
 
@@ -137,6 +139,8 @@ export function parseHash(hash: string): Route {
       return { name: "admin" };
     case "reset":
       return { name: "reset" };
+    case "notifications":
+      return { name: "notifications" };
     default:
       return HOME;
   }

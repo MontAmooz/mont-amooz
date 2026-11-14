@@ -2,6 +2,7 @@
 import { db } from "@/lib/db";
 import { lineDiff } from "@/lib/diff";
 import { fail, ok, readJson, requireUser, unauthorized } from "@/lib/server/http";
+import { notify } from "@/lib/server/notify";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -47,6 +48,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       where: { id },
       data: { status: "REJECTED", reviewedById: user.id, reviewedAt: new Date() },
     });
+    // P11 — notify the MR creator (source pamphlet owner)
+    await notify({
+      userId: mr.source.authorId,
+      actorId: user.id,
+      type: "MR_REVIEWED",
+      title: "پیشنهاد ادغام شما رد شد",
+      body: `«${user.fullName}» پیشنهاد شما برای «${mr.title}» را رد کرد`,
+      linkUrl: `#/request/${id}`,
+      relatedId: id,
+      relatedType: "mr",
+    });
     return ok({ status: "REJECTED" });
   }
 
@@ -88,6 +100,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       update: { score: { increment: gain } },
     }),
   ]);
+
+  // P11 — notify the MR creator (after the merge transaction commits)
+  await notify({
+    userId: mr.source.authorId,
+    actorId: user.id,
+    type: "MR_REVIEWED",
+    title: "پیشنهاد ادغام شما تأیید شد",
+    body: `«${user.fullName}» پیشنهاد شما برای «${mr.title}» را تأیید و ادغام کرد`,
+    linkUrl: `#/request/${id}`,
+    relatedId: id,
+    relatedType: "mr",
+  });
 
   return ok({ status: "MERGED" });
 }

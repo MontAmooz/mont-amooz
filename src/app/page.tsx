@@ -19,6 +19,8 @@ import LearnPlayerView from "@/components/edu/learn-player-view";
 import LearnView from "@/components/edu/learn-view";
 import MarketView from "@/components/edu/market-view";
 import { Navbar } from "@/components/edu/navbar";
+import { NotificationBell } from "@/components/edu/notification-bell";
+import { NotificationsView } from "@/components/edu/notifications-view";
 import { PamphletView } from "@/components/edu/pamphlet-view";
 import { ProfileView } from "@/components/edu/profile-view";
 import { ResetConfirmView } from "@/components/edu/reset-view";
@@ -39,6 +41,15 @@ export default function Page() {
   useEffect(() => {
     void refreshSession();
   }, []);
+
+  // P11 — poll unread notification count every 30s while logged in
+  const refreshNotifications = useEduStore((s) => s.refreshNotifications);
+  useEffect(() => {
+    if (!user) return;
+    void refreshNotifications(); // initial fetch
+    const interval = setInterval(() => void refreshNotifications(), 30_000);
+    return () => clearInterval(interval);
+  }, [user, refreshNotifications]);
 
   // scroll behavior on route change (skip the very first render)
   const scrollKey =
@@ -150,6 +161,18 @@ export default function Page() {
         );
       case "reset":
         return <ResetConfirmView />;
+      case "notifications":
+        if (!sessionLoaded) return null;
+        return user ? (
+          <NotificationsView />
+        ) : (
+          <div className="mx-auto max-w-7xl px-4 py-16">
+            <AuthRequiredBox
+              title="برای دیدن اعلان‌ها وارد حساب کاربری شوید"
+              hint="اعلان‌ها فقط برای کاربر واردشده نمایش داده می‌شوند."
+            />
+          </div>
+        );
       default:
         return <HomeView params={{}} />;
     }

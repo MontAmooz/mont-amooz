@@ -4,7 +4,9 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { PLATFORM_COMMISSION_PERCENT } from "@/lib/constants";
 import { asString, fail, ok, readJson, requireUser, unauthorized } from "@/lib/server/http";
+import { notify } from "@/lib/server/notify";
 import { sessionInclude, toSessionItem } from "@/lib/server/serializers";
+import { faDate } from "@/lib/format";
 
 const MEETING_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I, O, 0, 1
 
@@ -157,6 +159,18 @@ export async function POST(req: Request) {
         });
         await tx.wallet.update({ where: { userId: user.id }, data: { balance: balanceAfter } });
         return session.id;
+      });
+
+      // P11 — notify the teacher (after the booking transaction commits)
+      await notify({
+        userId: slot.teacherId,
+        actorId: user.id,
+        type: "SESSION_BOOKED",
+        title: "رزرو جدید",
+        body: `«${user.fullName}» جلسهٔ «${topicLabel}» را برای ${faDate(slot.startAt)} رزرو کرد`,
+        linkUrl: `#/session/${sessionId}`,
+        relatedId: sessionId,
+        relatedType: "session",
       });
       return ok({ id: sessionId }, 201);
     } catch (e) {
