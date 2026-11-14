@@ -36,6 +36,7 @@ model User {
   uploadedAttachments PamphletAttachment[] @relation("UploadedAttachments")
   passwordResets    PasswordResetToken[] @relation("PasswordResets")
   issuedResets      PasswordResetToken[] @relation("IssuedResets")
+  notifications     Notification[]
 
   // Phase 2 — teaching marketplace
   wallet            Wallet?
@@ -394,4 +395,26 @@ model PasswordResetToken {
   createdBy User @relation("IssuedResets", fields: [createdById], references: [id])
 
   @@index([userId])
+}
+
+// ===================== P11 — In-app Notifications =====================
+
+// One row per notification (P11). Created by notify() after the triggering
+// action commits; read state is readAt. 30s polling reads the unread count.
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String // MR_RECEIVED | MR_REVIEWED | REVIEW_RECEIVED | SESSION_BOOKED | SESSION_COMPLETED | COURSE_PURCHASED
+  title       String
+  body        String?
+  linkUrl     String? // client hash URL, e.g. "#/request/abc"
+  relatedId   String?
+  relatedType String? // pamphlet | mr | session | course
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([userId, createdAt])
 }

@@ -2,6 +2,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireUser, unauthorized } from "@/lib/server/http";
+import { notify } from "@/lib/server/notify";
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -48,6 +49,22 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       where: { userId: session.teacherId },
       data: { balance: balanceAfter },
     });
+  });
+
+  // P11 — notify the student (after the completion transaction commits)
+  const teacher = await db.user.findUnique({
+    where: { id: session.teacherId },
+    select: { fullName: true },
+  });
+  await notify({
+    userId: session.studentId,
+    actorId: user.id,
+    type: "SESSION_COMPLETED",
+    title: "جلسه برگزار شد",
+    body: `جلسهٔ شما با «${teacher?.fullName ?? "معلم"}» به پایان رسید. لطفاً بازخورد بدهید.`,
+    linkUrl: `#/session/${id}`,
+    relatedId: id,
+    relatedType: "session",
   });
 
   return ok({ status: "COMPLETED" });

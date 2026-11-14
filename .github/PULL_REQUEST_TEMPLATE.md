@@ -11,6 +11,7 @@
 - [ ] در صورت تغییر API، `docs/ARCHITECTURE.md` به‌روز شد
 - [ ] در صورت تصمیم فنی جدید، ADR نوشته شد
 - [ ] هیچ مقدار حساس (کلید/رمز) در کد نیست
+- [ ] در صورت تغییر `bun.lock` **یا** `prisma/schema.prisma`، artifact `v0.3.0-deps` refresh شد (ADR-0010 + P10 lesson)
 
 ## Issue مرتبط
 <!-- Closes #123 -->

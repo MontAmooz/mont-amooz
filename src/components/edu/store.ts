@@ -1,6 +1,7 @@
 "use client";
 
-// مُنت‌آموز — global client state (zustand): session user + auth dialog.
+// مُنت‌آموز — global client state (zustand): session user + auth dialog
+// + notification unread count (P11, 30s polling).
 
 import { create } from "zustand";
 import { api } from "@/lib/client";
@@ -13,17 +14,30 @@ interface EduState {
   authOpen: boolean;
   /** Optional Persian hint shown inside the auth dialog (why login is needed). */
   authHint: string | null;
+  /** P11 — unread notification count (polled every 30s while logged in). */
+  unreadNotifications: number;
+  refreshNotifications: () => Promise<void>;
   setUser: (user: PublicUser | null) => void;
   markSessionLoaded: () => void;
   openAuth: (hint?: string) => void;
   closeAuth: () => void;
 }
 
-export const useEduStore = create<EduState>((set) => ({
+export const useEduStore = create<EduState>((set, get) => ({
   user: null,
   sessionLoaded: false,
   authOpen: false,
   authHint: null,
+  unreadNotifications: 0,
+  refreshNotifications: async () => {
+    if (!get().user) return;
+    try {
+      const { count } = await api<{ count: number }>("/notifications/unread-count");
+      set({ unreadNotifications: count });
+    } catch {
+      // polling is best-effort; never surface errors to the user
+    }
+  },
   setUser: (user) => set({ user, sessionLoaded: true }),
   markSessionLoaded: () => set({ sessionLoaded: true }),
   openAuth: (hint) => set({ authOpen: true, authHint: hint ?? null }),

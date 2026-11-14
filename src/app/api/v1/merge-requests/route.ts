@@ -1,6 +1,7 @@
 // /api/v1/merge-requests — GET (filterable list) + POST (create from fork)
 import { db } from "@/lib/db";
 import { asString, fail, ok, readJson, requireUser, unauthorized } from "@/lib/server/http";
+import { notify } from "@/lib/server/notify";
 import { mrInclude, toMRItem } from "@/lib/server/serializers";
 
 // ---------- GET: list (newest first) ----------
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
       where: { id: sourceId },
       select: { id: true, authorId: true, forkedFromId: true },
     }),
-    db.pamphlet.findUnique({ where: { id: targetId }, select: { id: true } }),
+    db.pamphlet.findUnique({ where: { id: targetId }, select: { id: true, title: true, authorId: true } }),
   ]);
   if (!source || !target) return fail("جزوه پیدا نشد", 404);
   if (source.authorId !== user.id) {
@@ -75,5 +76,18 @@ export async function POST(req: Request) {
     },
     select: { id: true },
   });
+
+  // P11 — notify the target pamphlet's owner (after the MR exists; never throws)
+  await notify({
+    userId: target.authorId,
+    actorId: user.id,
+    type: "MR_RECEIVED",
+    title: "پیشنهاد ادغام جدید",
+    body: `«${user.fullName}» برای «${target.title}» پیشنهاد ادغام فرستاد`,
+    linkUrl: `#/request/${mr.id}`,
+    relatedId: mr.id,
+    relatedType: "mr",
+  });
+
   return ok({ id: mr.id }, 201);
 }

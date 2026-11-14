@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { NotificationBell } from "./notification-bell";
 import {
   Sheet,
   SheetContent,
@@ -264,6 +265,9 @@ export function Navbar() {
               ورود | ثبت‌نام
             </Button>
           )}
+
+          {/* P11 — notification bell (logged-in users only) */}
+          <NotificationBell />
 
           {/* mobile hamburger */}
           <Button

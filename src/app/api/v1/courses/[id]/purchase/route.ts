@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { PLATFORM_COMMISSION_PERCENT } from "@/lib/constants";
 import { fail, ok, requireUser, unauthorized } from "@/lib/server/http";
+import { notify } from "@/lib/server/notify";
 
 class AlreadyEnrolled extends Error {}
 class InsufficientFunds extends Error {}
@@ -107,6 +108,20 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
         data: { balance: teacherBalance },
       });
     });
+
+    // P11 — notify the teacher (paid purchases only; after the transaction commits)
+    if (price > 0) {
+      await notify({
+        userId: course.teacherId,
+        actorId: user.id,
+        type: "COURSE_PURCHASED",
+        title: "خرید دوره",
+        body: `«${user.fullName}» دورهٔ «${course.title}» را خرید`,
+        linkUrl: `#/course/${course.id}`,
+        relatedId: course.id,
+        relatedType: "course",
+      });
+    }
     return ok({ ok: true }, 201);
   } catch (e) {
     if (e instanceof AlreadyEnrolled) return fail("شما قبلاً این دوره را خریده‌اید", 409);

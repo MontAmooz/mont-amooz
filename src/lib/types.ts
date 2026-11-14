@@ -25,6 +25,19 @@ export interface AdminUserRow {
   enrollmentCount: number;
 }
 
+/** P11 — one in-app notification. */
+export interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  linkUrl: string | null;
+  relatedType: string | null;
+  relatedId: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
 export interface PamphletAuthor {
   id: string;
   fullName: string;
