@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/client";
 import { faDate, faNumber, faRating, faToman } from "@/lib/format";
-import type { CourseCard, PublicUser, UserProfile, UserProfileTeach } from "@/lib/types";
+import type { CourseCard, ExamSummary, PublicUser, UserProfile, UserProfileTeach } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CourseCover, EmptyBox, ErrorBox, InitialsAvatar, PageSkeleton, Spinner } from "./bits";
 import { useFetch } from "./hooks";
@@ -29,10 +29,11 @@ import { navigate } from "./router";
 import { PamphletCard } from "./pamphlet-card";
 import { useEduStore } from "./store";
 
-/** GET /users/[id] extended with Phase-2 teach + courses blocks. */
+/** GET /users/[id] extended with Phase-2 teach + courses + P12 exams blocks. */
 interface ProfileWithMarket extends UserProfile {
   teach?: UserProfileTeach;
   courses?: CourseCard[];
+  exams?: ExamSummary[];
 }
 
 /** P10 — user-initiated password change (knows the current password). */
@@ -264,7 +265,7 @@ export function ProfileView({ id, isMe }: { id: string; isMe?: boolean }) {
     );
   }
 
-  const { user, pamphlets, stats, teach, courses } = profile.data;
+  const { user, pamphlets, stats, teach, courses, exams } = profile.data;
   const firstName = user.fullName.split(/\s+/)[0];
   const hasTeach =
     !!teach && (teach.openSlots > 0 || teach.completedSessions > 0 || teach.courseCount > 0);
@@ -435,6 +436,33 @@ export function ProfileView({ id, isMe }: { id: string; isMe?: boolean }) {
           <h2 className="text-xl font-black md:text-2xl">امنیت حساب</h2>
           <div className="mt-4">
             <ChangePasswordCard />
+          </div>
+        </section>
+      )}
+
+      {/* P12 — published exams (teacher profiles) */}
+      {exams && exams.length > 0 && (
+        <section className="mt-10" aria-label="آزمون‌های این دبیر">
+          <h2 className="text-xl font-black md:text-2xl">آزمون‌های {isMe ? "شما" : firstName}</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {exams.map((e) => (
+              <a
+                key={e.id}
+                href={`#/exam/${e.id}`}
+                className="block border-2 border-ink bg-white p-4 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--color-ink)]"
+              >
+                <h3 className="text-sm font-black leading-7">{e.title}</h3>
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                  <span className="oeg-mono">{faNumber(e.questionCount)} سؤال</span>
+                  <span className="oeg-mono">{faNumber(e.attemptCount)} شرکت‌کننده</span>
+                  {e.avgScore !== null && (
+                    <span className="oeg-mono font-black text-gray-600">
+                      میانگین {faNumber(Math.round(e.avgScore))}٪
+                    </span>
+                  )}
+                </div>
+              </a>
+            ))}
           </div>
         </section>
       )}

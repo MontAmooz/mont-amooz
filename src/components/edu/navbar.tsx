@@ -5,6 +5,7 @@
 import { useState } from "react";
 import {
   BookOpen,
+  ClipboardList,
   GitMerge,
   GraduationCap,
   LogOut,
@@ -170,6 +171,12 @@ export function Navbar() {
             <GraduationCap className="size-4" aria-hidden="true" /> بازارچهٔ تدریس
           </NavLink>
           <NavLink
+            hash="#/exams"
+            active={route.name === "exams" || route.name === "exam" || route.name === "exam-new" || route.name === "exam-edit" || route.name === "exam-result"}
+          >
+            <ClipboardList className="size-4" aria-hidden="true" /> آزمون‌ها
+          </NavLink>
+          <NavLink
             hash="#/requests"
             active={route.name === "requests" || route.name === "request"}
           >
@@ -237,6 +244,14 @@ export function Navbar() {
                 >
                   <Video className="size-4" aria-hidden="true" /> پنل تدریس
                 </DropdownMenuItem>
+                {user.role === "معلم" && (
+                  <DropdownMenuItem
+                    className="h-11 cursor-pointer gap-2 font-bold"
+                    onClick={() => navigate("#/exams?mine=true")}
+                  >
+                    <ClipboardList className="size-4" aria-hidden="true" /> آزمون‌های من
+                  </DropdownMenuItem>
+                )}
                 {user.isAdmin && (
                   <DropdownMenuItem
                     className="h-11 cursor-pointer gap-2 font-bold"
@@ -332,6 +347,13 @@ export function Navbar() {
               className="flex h-11 items-center gap-3 border-2 border-transparent px-3 font-bold hover:border-gray-200"
             >
               <GraduationCap className="size-5 text-primary" aria-hidden="true" /> بازارچهٔ تدریس
+            </a>
+            <a
+              href="#/exams"
+              onClick={() => setMobileOpen(false)}
+              className="flex h-11 items-center gap-3 border-2 border-transparent px-3 font-bold hover:border-gray-200"
+            >
+              <ClipboardList className="size-5 text-primary" aria-hidden="true" /> آزمون‌ها
             </a>
             <a
               href="#/requests"

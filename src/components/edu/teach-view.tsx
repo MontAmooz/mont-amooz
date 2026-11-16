@@ -7,6 +7,7 @@ import {
   CalendarClock,
   CalendarDays,
   CheckCheck,
+  ClipboardList,
   Clock,
   DoorOpen,
   GraduationCap,
@@ -77,6 +78,7 @@ import {
 import type {
   CourseCard,
   CourseDetail,
+  ExamSummary,
   MySlotItem,
   SessionItem,
   UserProfileTeach,
@@ -1591,7 +1593,7 @@ export default function TeachView() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="mt-8">
-        <TabsList className="h-11 w-full grid-cols-3 sm:w-fit">
+        <TabsList className="h-11 w-full grid-cols-4 sm:w-fit">
           <TabsTrigger value="classes" className="gap-1.5 px-4 font-bold">
             <CalendarClock className="size-4" aria-hidden="true" /> کلاس‌ها
           </TabsTrigger>
@@ -1600,6 +1602,9 @@ export default function TeachView() {
           </TabsTrigger>
           <TabsTrigger value="courses" className="gap-1.5 px-4 font-bold">
             <PlayCircle className="size-4" aria-hidden="true" /> دوره‌ها
+          </TabsTrigger>
+          <TabsTrigger value="exams" className="gap-1.5 px-4 font-bold">
+            <ClipboardList className="size-4" aria-hidden="true" /> آزمون‌ها
           </TabsTrigger>
         </TabsList>
         <TabsContent value="classes" className="mt-6">
@@ -1611,6 +1616,9 @@ export default function TeachView() {
         <TabsContent value="courses" className="mt-6">
           <CoursesTab />
         </TabsContent>
+        <TabsContent value="exams" className="mt-6">
+          <ExamsTab />
+        </TabsContent>
       </Tabs>
 
       <div className="mt-8">
@@ -1619,6 +1627,76 @@ export default function TeachView() {
           خرید دوره به‌صورت خودکار به کیف پولتان واریز می‌شود.
         </InfoNote>
       </div>
+    </div>
+  );
+}
+
+// ===================== P12 — exams tab =====================
+
+function ExamsTab() {
+  const list = useFetch<{ items: ExamSummary[]; total: number }>(
+    () => api("/exams?mine=true&pageSize=48"),
+    []
+  );
+
+  const items = list.data?.items ?? [];
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-xl text-sm leading-7 text-gray-500">
+          آزمون‌های چندگزینه‌ای بسازید، منتشر کنید و نتایج دانش‌آموزان را همین‌جا ببینید.
+        </p>
+        <Button
+          onClick={() => navigate("#/exam/new")}
+          className="h-11 border-2 border-ink font-black md:h-10"
+        >
+          <Plus className="size-4" aria-hidden="true" /> ساخت آزمون جدید
+        </Button>
+      </div>
+
+      {list.loading && !list.data ? (
+        <div className="mt-6" aria-busy="true">
+          <PageSkeleton />
+        </div>
+      ) : list.error ? (
+        <div className="mt-6">
+          <ErrorBox message={list.error} onRetry={list.retry} />
+        </div>
+      ) : items.length === 0 ? (
+        <div className="mt-6">
+          <EmptyBox
+            title="هنوز آزمونی نساخته‌اید"
+            description="اولین آزمون چندگزینه‌ای خود را بسازید تا دانش‌آموزان شرکت کنند."
+          />
+        </div>
+      ) : (
+        <ul className="mt-6 divide-y divide-gray-100 border-2 border-ink bg-white">
+          {items.map((e) => (
+            <li key={e.id}>
+              <a
+                href={`#/exam/${e.id}`}
+                className="flex flex-wrap items-center gap-3 p-4 transition-colors hover:bg-gray-50"
+              >
+                <ClipboardList className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                <span className="min-w-0 flex-1 text-sm font-bold">{e.title}</span>
+                {!e.published && (
+                  <Badge variant="outline" className="border-2 border-gold px-1.5 text-xs font-bold text-[#8a6a24]">
+                    پیش‌نویس
+                  </Badge>
+                )}
+                <span className="oeg-mono text-xs text-gray-500">{faNumber(e.questionCount)} سؤال</span>
+                <span className="oeg-mono text-xs text-gray-500">{faNumber(e.attemptCount)} شرکت‌کننده</span>
+                {e.avgScore !== null && (
+                  <span className="oeg-mono text-xs font-black text-gray-600">
+                    میانگین {faNumber(Math.round(e.avgScore))}٪
+                  </span>
+                )}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

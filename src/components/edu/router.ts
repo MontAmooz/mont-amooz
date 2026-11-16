@@ -51,7 +51,13 @@ export type Route =
   | { name: "admin" }
   | { name: "reset" }
   // P11 — notifications
-  | { name: "notifications" };
+  | { name: "notifications" }
+  // P12 — exam builder
+  | { name: "exams"; mine: boolean }
+  | { name: "exam-new" }
+  | { name: "exam-edit"; id: string }
+  | { name: "exam"; id: string }
+  | { name: "exam-result"; id: string; attemptId: string };
 
 const HOME: Route = { name: "home", params: {} };
 
@@ -100,10 +106,19 @@ export function parseHash(hash: string): Route {
     return { name: "home", params };
   }
 
-  const [head, id, extra] = segments;
+  const [head, id, extra, fourth] = segments;
   // #/learn/{courseId} (player) vs #/learn (my enrollments)
   if (head === "learn" && id) return { name: "learn-course", id };
   if (head === "learn" && !id) return { name: "learn" };
+  // P12 — exams: #/exam/new | #/exam/{id} | #/exam/{id}/edit | #/exam/{id}/result/{attemptId}
+  if (head === "exam" && !id) return { name: "exams", mine: false };
+  if (head === "exams") return { name: "exams", mine: query.get("mine") === "true" };
+  if (head === "exam" && id && extra === "result" && fourth) {
+    return { name: "exam-result", id, attemptId: fourth };
+  }
+  if (head === "exam" && id && extra === "edit") return { name: "exam-edit", id };
+  if (head === "exam" && id === "new") return { name: "exam-new" };
+  if (head === "exam" && id) return { name: "exam", id };
   switch (head) {
     case "pamphlet":
       return id ? { name: "pamphlet", id } : HOME;
@@ -141,6 +156,8 @@ export function parseHash(hash: string): Route {
       return { name: "reset" };
     case "notifications":
       return { name: "notifications" };
+    case "exams":
+      return { name: "exams", mine: false };
     default:
       return HOME;
   }

@@ -13,6 +13,10 @@ import CourseView from "@/components/edu/course-view";
 import CoursesView from "@/components/edu/courses-view";
 import { CreateView } from "@/components/edu/create-view";
 import { EditView } from "@/components/edu/edit-view";
+import { ExamCreateView } from "@/components/edu/exam-create-view";
+import { ExamResultView } from "@/components/edu/exam-result-view";
+import { ExamView } from "@/components/edu/exam-view";
+import { ExamsView } from "@/components/edu/exams-view";
 import { SiteFooter } from "@/components/edu/footer";
 import { HomeView } from "@/components/edu/home-view";
 import LearnPlayerView from "@/components/edu/learn-player-view";
@@ -173,6 +177,37 @@ export default function Page() {
             />
           </div>
         );
+      // ----- P12 — exam builder -----
+      case "exams":
+        return <ExamsView mine={route.mine} />;
+      case "exam-new":
+        if (!sessionLoaded) return null;
+        return user ? (
+          <ExamCreateView />
+        ) : (
+          <div className="mx-auto max-w-7xl px-4 py-16">
+            <AuthRequiredBox
+              title="برای ساخت آزمون وارد حساب کاربری شوید"
+              hint="ساخت آزمون مخصوص حساب‌های معلم است."
+            />
+          </div>
+        );
+      case "exam-edit":
+        if (!sessionLoaded) return null;
+        return user ? (
+          <ExamCreateView key={route.id} editId={route.id} />
+        ) : (
+          <div className="mx-auto max-w-7xl px-4 py-16">
+            <AuthRequiredBox
+              title="برای ویرایش آزمون وارد حساب کاربری شوید"
+              hint="فقط نویسندهٔ آزمون می‌تواند ویرایش کند."
+            />
+          </div>
+        );
+      case "exam":
+        return <ExamView key={route.id} id={route.id} />;
+      case "exam-result":
+        return <ExamResultView key={route.attemptId} examId={route.id} attemptId={route.attemptId} />;
       default:
         return <HomeView params={{}} />;
     }
