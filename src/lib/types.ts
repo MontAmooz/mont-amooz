@@ -38,6 +38,92 @@ export interface NotificationItem {
   createdAt: string;
 }
 
+// ===================== P12 — Exam Builder =====================
+
+export type ExamOption = { id: string; text: string };
+
+export interface ExamSummary {
+  id: string;
+  title: string;
+  description: string | null;
+  grade: string;
+  subject: string;
+  published: boolean;
+  questionCount: number;
+  attemptCount: number;
+  /** mean percentage 0-100 across attempts; null when no attempts */
+  avgScore: number | null;
+  teacher: { id: string; fullName: string; title: string | null };
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Question shape for students — correctOptionId stripped. */
+export interface ExamQuestionStudent {
+  id: string;
+  order: number;
+  text: string;
+  options: ExamOption[];
+  points: number;
+}
+
+/** Question shape for the owner (teacher) only. */
+export interface ExamQuestionTeacher extends ExamQuestionStudent {
+  correctOptionId: string;
+}
+
+export interface ExamDetailTeacher extends ExamSummary {
+  questions: ExamQuestionTeacher[];
+  isMine: true;
+}
+
+export interface ExamDetailStudent extends ExamSummary {
+  questions: ExamQuestionStudent[];
+  isMine: false;
+  myAttempt: {
+    id: string;
+    score: number;
+    maxScore: number;
+    submittedAt: string;
+  } | null;
+}
+
+export type ExamDetail = ExamDetailTeacher | ExamDetailStudent;
+
+export interface ExamAttemptDetail {
+  id: string;
+  exam: { id: string; title: string };
+  student: { id: string; fullName: string };
+  score: number;
+  maxScore: number;
+  submittedAt: string;
+  questions: Array<{
+    id: string;
+    order: number;
+    text: string;
+    options: ExamOption[];
+    points: number;
+    correctOptionId: string;
+    myOptionId: string;
+    isCorrect: boolean;
+  }>;
+}
+
+export interface MyExamAttemptSummary {
+  id: string;
+  exam: { id: string; title: string; grade: string; subject: string };
+  score: number;
+  maxScore: number;
+  submittedAt: string;
+}
+
+export interface ExamListResponse {
+  items: ExamSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface PamphletAuthor {
   id: string;
   fullName: string;

@@ -37,6 +37,8 @@ model User {
   passwordResets    PasswordResetToken[] @relation("PasswordResets")
   issuedResets      PasswordResetToken[] @relation("IssuedResets")
   notifications     Notification[]
+  authoredExams     Exam[]               @relation("AuthoredExams")
+  takenExams        ExamAttempt[]        @relation("TakenExams")
 
   // Phase 2 — teaching marketplace
   wallet            Wallet?
@@ -417,4 +419,65 @@ model Notification {
 
   @@index([userId, readAt, createdAt])
   @@index([userId, createdAt])
+}
+
+// ===================== P12 — Exam Builder =====================
+
+// Teacher-authored multiple-choice exam (P12 MVP). Draft until published;
+// questions lock once any attempt exists.
+model Exam {
+  id          String    @id @default(cuid())
+  teacherId   String
+  title       String
+  description String?
+  grade       String
+  subject     String
+  published   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  teacher   User          @relation("AuthoredExams", fields: [teacherId], references: [id])
+  questions ExamQuestion[]
+  attempts  ExamAttempt[]
+
+  @@index([published, grade, subject])
+  @@index([teacherId])
+}
+
+// One MC question. `options` is a JSON string of {id, text} — options are
+// immutable per question, never queried alone, never joined; JSON keeps the
+// schema flat. correctOptionId is stripped from non-owner API responses.
+model ExamQuestion {
+  id               String   @id @default(cuid())
+  examId           String
+  order            Int
+  text             String
+  options          String   // JSON array of {id, text}
+  correctOptionId  String
+  points           Int      @default(1)
+  createdAt        DateTime @default(now())
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, order])
+  @@index([examId])
+}
+
+// A student's graded attempt. Single attempt per student per exam, enforced
+// by the unique constraint. `answers` is a JSON map: { [questionId]: optionId }.
+model ExamAttempt {
+  id          String   @id @default(cuid())
+  examId      String
+  studentId   String
+  answers     String   // JSON: { [questionId]: optionId }
+  score       Int
+  maxScore    Int
+  submittedAt DateTime @default(now())
+
+  exam    Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student User @relation("TakenExams", fields: [studentId], references: [id])
+
+  @@unique([examId, studentId])
+  @@index([studentId])
+  @@index([examId])
 }

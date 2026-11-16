@@ -7,6 +7,7 @@ import {
   pamphletSummaryInclude,
   round1,
   toCourseCard,
+  toExamSummary,
   toPamphletSummary,
 } from "@/lib/server/serializers";
 import type { UserProfileTeach } from "@/lib/types";
@@ -38,6 +39,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     completedSessions,
     sessionReviews,
     courseRows,
+    examRows,
   ] = await Promise.all([
     db.pamphlet.findMany({
       where: { authorId: id },
@@ -60,6 +62,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     db.videoCourse.findMany({
       where: { teacherId: id, status: "PUBLISHED" },
       include: courseCardInclude,
+      orderBy: { createdAt: "desc" },
+    }),
+    db.exam.findMany({
+      where: { teacherId: id, published: true },
+      include: {
+        teacher: { select: { id: true, fullName: true, title: true } },
+        _count: { select: { questions: true, attempts: true } },
+        attempts: { select: { score: true, maxScore: true } },
+      },
       orderBy: { createdAt: "desc" },
     }),
   ]);
@@ -92,5 +103,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     },
     teach,
     courses: courseRows.map(toCourseCard),
+    exams: examRows.map(toExamSummary),
   });
 }

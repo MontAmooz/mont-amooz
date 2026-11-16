@@ -5,6 +5,10 @@ import type {
   Contributor,
   CourseCard,
   CourseReviewItem,
+  ExamOption,
+  ExamQuestionStudent,
+  ExamQuestionTeacher,
+  ExamSummary,
   LessonItem,
   MergeRequestItem,
   MRStatus,
@@ -390,4 +394,141 @@ export function toLessonItem(
   if (opts.watched !== undefined) item.watched = opts.watched;
   if (opts.unlocked) item.videoUrl = l.videoUrl;
   return item;
+}
+
+// ===================== P12 — Exam Builder =====================
+
+export type ExamRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  grade: string;
+  subject: string;
+  published: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  teacher: { id: string; fullName: string; title: string | null };
+  _count?: { questions: number; attempts: number };
+  attempts?: Array<{ score: number; maxScore: number }>;
+};
+
+/** Map an exam row (with counts / attempt scores) to the public summary. */
+export function toExamSummary(e: ExamRow): ExamSummary {
+  const attempts = e.attempts ?? [];
+  const avgScore =
+    attempts.length > 0
+      ? round1(
+          (attempts.reduce((s, a) => s + (a.maxScore > 0 ? (a.score / a.maxScore) * 100 : 0), 0) /
+            attempts.length)
+        )
+      : null;
+  return {
+    id: e.id,
+    title: e.title,
+    description: e.description,
+    grade: e.grade,
+    subject: e.subject,
+    published: e.published,
+    questionCount: e._count?.questions ?? 0,
+    attemptCount: e._count?.attempts ?? 0,
+    avgScore,
+    teacher: { id: e.teacher.id, fullName: e.teacher.fullName, title: e.teacher.title },
+    createdAt: e.createdAt.toISOString(),
+    updatedAt: e.updatedAt.toISOString(),
+  };
+}
+
+export type ExamQuestionRow = {
+  id: string;
+  order: number;
+  text: string;
+  options: string; // JSON [{id, text}]
+  correctOptionId: string;
+  points: number;
+};
+
+/** Parse a question row's options JSON (defensive against malformed data). */
+export function examQuestionOptions(row: Pick<ExamQuestionRow, "options">): ExamOption[] {
+  try {
+    const parsed: unknown = JSON.parse(row.options);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (o): o is ExamOption =>
+        !!o && typeof o === "object" && typeof (o as ExamOption).id === "string" && typeof (o as ExamOption).text === "string"
+    );
+  } catch {
+    return [];
+  }
+}
+
+/** Map a question row to the teacher shape (includes correctOptionId). */
+export function toExamQuestionTeacher(row: ExamQuestionRow): ExamQuestionTeacher {
+  return {
+    id: row.id,
+    order: row.order,
+    text: row.text,
+    options: examQuestionOptions(row),
+    points: row.points,
+    correctOptionId: row.correctOptionId,
+  };
+}
+
+/** Map a question row to the student shape (correctOptionId stripped). */
+export function toExamQuestionStudent(row: ExamQuestionRow): ExamQuestionStudent {
+  return {
+    id: row.id,
+    order: row.order,
+    text: row.text,
+    options: examQuestionOptions(row),
+    points: row.points,
+  };
+}
+
+/** Validate an exam-questions payload → normalized rows, or a Persian error. */
+export function parseExamQuestions(
+  raw: unknown
+): { text: string; options: ExamOption[]; correctOptionId: string; points: number }[] | string {
+  if (!Array.isArray(raw) || raw.length < 1) return "آزمون باید بین ۱ تا ۵۰ سؤال داشته باشد";
+  if (raw.length > 50) return "آزمون باید بین ۱ تا ۵۰ سؤال داشته باشد";
+
+  const out: { text: string; options: ExamOption[]; correctOptionId: string; points: number }[] = [];
+  for (const q of raw) {
+    if (!q || typeof q !== "object") return "داده‌های سؤال نامعتبر است";
+    const item = q as Record<string, unknown>;
+    const text = typeof item.text === "string" ? item.text.trim() : "";
+    if (text.length < 2 || text.length > 500) {
+      return "متن سؤال باید بین ۲ تا ۵۰۰ نویسه باشد";
+    }
+    if (!Array.isArray(item.options)) return "هر سؤال باید بین ۲ تا ۴ گزینه داشته باشد";
+    const optionTexts: string[] = [];
+    for (const o of item.options) {
+      const t = typeof o === "object" && o !== null && typeof (o as Record<string, unknown>).text === "string"
+        ? ((o as Record<string, unknown>).text as string).trim()
+        : "";
+      if (t.length < 1 || t.length > 200) return "هر سؤال باید بین ۲ تا ۴ گزینه داشته باشد";
+      optionTexts.push(t);
+    }
+    if (optionTexts.length < 2 || optionTexts.length > 4) {
+      return "هر سؤال باید بین ۲ تا ۴ گزینه داشته باشد";
+    }
+    const correctIndex = item.correctOptionIndex;
+    if (
+      typeof correctIndex !== "number" ||
+      !Number.isInteger(correctIndex) ||
+      correctIndex < 0 ||
+      correctIndex >= optionTexts.length
+    ) {
+      return "گزینهٔ صحیح نامعتبر است";
+    }
+    let points = 1;
+    if (item.points !== undefined && item.points !== null) {
+      if (typeof item.points !== "number" || !Number.isInteger(item.points) || item.points < 1 || item.points > 10) {
+        return "امتیاز هر سؤال باید بین ۱ تا ۱۰ باشد";
+      }
+      points = item.points;
+    }
+    const options: ExamOption[] = optionTexts.map((t) => ({ id: crypto.randomUUID(), text: t }));
+    out.push({ text, options, correctOptionId: options[correctIndex].id, points });
+  }
+  return out;
 }

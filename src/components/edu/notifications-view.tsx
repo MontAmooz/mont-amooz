@@ -4,7 +4,7 @@
 // Filter tabs (همه / خوانده‌نشده), pagination, mark-all-read; each row links
 // to its notification target and marks it read on click.
 
-import { Calendar, CheckCircle, GitMerge, GitPullRequest, MessageSquare, ShoppingBag } from "lucide-react";
+import { Calendar, CheckCircle, ClipboardCheck, GitMerge, GitPullRequest, MessageSquare, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +33,8 @@ function NotificationIcon({ type, unread }: { type: string; unread: boolean }) {
       return <CheckCircle className="size-4" aria-hidden="true" />;
     case "COURSE_PURCHASED":
       return <ShoppingBag className="size-4" aria-hidden="true" />;
+    case "EXAM_COMPLETED":
+      return <ClipboardCheck className="size-4" aria-hidden="true" />;
     default:
       return <GitMerge className="size-4" aria-hidden="true" />;
   }
