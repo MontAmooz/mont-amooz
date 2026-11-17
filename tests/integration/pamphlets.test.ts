@@ -4,6 +4,7 @@ import fs from "node:fs";
 import {
   api,
   createPamphlet,
+  getSeedCounts,
   loginAs,
   registerUser,
   DEMO_USERS,
@@ -72,10 +73,11 @@ describe("Pamphlets — POST /pamphlets", () => {
 });
 
 describe("Pamphlets — GET /pamphlets (list)", () => {
-  test("public list shows at least the 14 seeded pamphlets", async () => {
+  test("public list shows at least the seeded pamphlets", async () => {
+    const counts = await getSeedCounts(baseUrl());
     const r = await api<{ total: number }>(baseUrl(), "/api/v1/pamphlets");
     expect(r.status).toBe(200);
-    expect(r.data.total).toBeGreaterThanOrEqual(14); // other files may add more (shared DB)
+    expect(r.data.total).toBeGreaterThanOrEqual(counts.pamphlets); // other files may add more (shared DB)
   });
 
   test("pagination: pageSize=2 page=2 differs from page=1", async () => {
@@ -88,7 +90,8 @@ describe("Pamphlets — GET /pamphlets (list)", () => {
     expect(p1.data.items).toHaveLength(2);
     expect(p2.data.items).toHaveLength(2);
     expect(p1.data.items[0].id).not.toBe(p2.data.items[0].id);
-    expect(p1.data.total).toBeGreaterThanOrEqual(14);
+    const counts = await getSeedCounts(baseUrl());
+    expect(p1.data.total).toBeGreaterThanOrEqual(counts.pamphlets);
     expect(p2.data.total).toBe(p1.data.total);
   });
 

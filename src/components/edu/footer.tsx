@@ -51,6 +51,22 @@ export function SiteFooter() {
             <span className="mx-2 text-white/30">—</span>
             محتوا: <span className="oeg-mono" dir="ltr">CC BY-SA 4.0</span>
           </p>
+          <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            <a
+              href="https://t.me/MontAmooz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/70 transition-colors hover:text-white hover:underline"
+            >
+              گروه تلگرام معلمان
+            </a>
+            <a
+              href="mailto:mohammad.montajebii@gmail.com"
+              className="text-white/70 transition-colors hover:text-white hover:underline"
+            >
+              <span className="oeg-mono" dir="ltr">mohammad.montajebii@gmail.com</span>
+            </a>
+          </p>
           <blockquote className="mt-4 border-s-2 border-gold ps-3 text-sm leading-7 text-gold">
             «تنها راه رسیدن به بهترین جزوه، نوشتن آن با هم است.»
           </blockquote>

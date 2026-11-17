@@ -20,8 +20,14 @@ async function resolveBookedSession(request: APIRequestContext): Promise<string>
   const res = await request.get("/api/v1/sessions?role=student&pageSize=50", {
     headers: { cookie },
   });
-  const body = (await res.json()) as { items?: Array<{ id: string; status: string }> };
-  const booked = (body.items ?? []).find((s) => s.status === "BOOKED");
+  const body = (await res.json()) as {
+    items?: Array<{ id: string; status: string; startAt: string }>;
+  };
+  // P13 expanded the seed — several BOOKED sessions may exist now; the room is
+  // the SOONEST one (the founder ↔ student demo session, startAt asc).
+  const booked = (body.items ?? [])
+    .filter((s) => s.status === "BOOKED")
+    .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt))[0];
   if (!booked) throw new Error("no BOOKED session in seed");
   bookedSessionId = booked.id;
   return booked.id;

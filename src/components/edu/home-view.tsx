@@ -5,6 +5,7 @@
 import {
   Award,
   ChevronLeft,
+  ClipboardCheck,
   ChevronRight,
   FileText,
   Filter,
@@ -67,6 +68,8 @@ const PAGE_SIZE = 12;
 interface PlatformStatsP2 extends PlatformStats {
   sessions?: number;
   courses?: number;
+  exams?: number;
+  openSlots?: number;
 }
 
 const GRADE_OPTIONS = GRADES.map((g) => ({ value: g, label: g }));
@@ -360,7 +363,7 @@ export function HomeView({ params }: { params: HomeParams }) {
   const statsCells: Array<{ icon: LucideIcon; label: string; value: string }> = [
     { icon: FileText, label: "جزوه‌ها", value: stats.loading ? "…" : stats.data ? faNumber(stats.data.pamphlets) : "—" },
     { icon: Users, label: "معلم‌ها", value: stats.loading ? "…" : stats.data ? faNumber(stats.data.teachers) : "—" },
-    { icon: GraduationCap, label: "جلسات برگزارشده", value: stats.loading ? "…" : stats.data ? faNumber(stats.data.sessions ?? 0) : "—" },
+    { icon: ClipboardCheck, label: "آزمون‌ها", value: stats.loading ? "…" : stats.data ? faNumber(stats.data.exams ?? 0) : "—" },
     { icon: PlayCircle, label: "دوره‌ها", value: stats.loading ? "…" : stats.data ? faNumber(stats.data.courses ?? 0) : "—" },
   ];
 
@@ -428,7 +431,16 @@ export function HomeView({ params }: { params: HomeParams }) {
               }
               className="h-12 border-2 border-ink px-6 text-base font-black hover:bg-gray-50"
             >
-              مرور جزوه‌ها
+              شروع کنید — رایگان
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
+              className="h-12 border-2 border-transparent px-4 text-sm font-bold text-gray-500 hover:text-ink"
+            >
+              آشنایی با روش کار ←
             </Button>
           </div>
         </div>
@@ -601,7 +613,7 @@ export function HomeView({ params }: { params: HomeParams }) {
       </section>
 
       {/* ---------- how it works ---------- */}
-      <section className="border-y-2 border-ink bg-gray-50" aria-label="چطور کار می‌کند">
+      <section id="how-it-works" className="border-y-2 border-ink bg-gray-50 scroll-mt-20" aria-label="چطور کار می‌کند">
         <div className="mx-auto max-w-7xl px-4 py-10 md:py-14">
           <SectionHead
             overline="چرخهٔ همکاری"

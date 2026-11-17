@@ -1,7 +1,7 @@
 // Integration tests — users (profile, PATCH me, top) + platform stats
 import { describe, test, expect } from "vitest";
 import fs from "node:fs";
-import { api, registerUser, loginAs, createPamphlet, createCourse, DEMO_USERS } from "../helpers/server";
+import { api, registerUser, loginAs, createPamphlet, createCourse, getSeedCounts, DEMO_USERS } from "../helpers/server";
 
 const baseUrl = () => fs.readFileSync("/tmp/oeg-test-url.txt", "utf8").trim();
 
@@ -88,14 +88,18 @@ describe("Users — GET /users/top", () => {
 
 describe("Stats — GET /stats", () => {
   test("seeded counts are present and plausible", async () => {
+    const counts = await getSeedCounts(baseUrl());
     const r = await api<{
       pamphlets: number; teachers: number; versions: number; reviews: number;
-      forks: number; mergeRequests: number; mergedCount: number; sessions: number; courses: number;
+      forks: number; mergeRequests: number; mergedCount: number; sessions: number;
+      courses: number; exams: number; openSlots: number;
     }>(baseUrl(), "/api/v1/stats");
     expect(r.status).toBe(200);
-    expect(r.data.pamphlets).toBeGreaterThanOrEqual(14);
+    expect(r.data.pamphlets).toBeGreaterThanOrEqual(counts.pamphlets);
     expect(r.data.teachers).toBeGreaterThanOrEqual(6);
-    expect(r.data.courses).toBeGreaterThanOrEqual(5);
+    expect(r.data.courses).toBeGreaterThanOrEqual(counts.courses);
+    expect(r.data.exams).toBeGreaterThanOrEqual(counts.exams);
+    expect(r.data.openSlots).toBeGreaterThanOrEqual(counts.slots);
   });
 
   test("creating a pamphlet bumps the count (eventual consistency within request)", async () => {
