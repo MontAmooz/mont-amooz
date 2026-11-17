@@ -353,7 +353,51 @@ const VALID_LESSON = {
   isFreePreview: false,
 };
 
-/** Create a course (PUBLISHED by default) → its id + lesson ids (in order). */
+// ==== P13: dynamic seed counts (replaces hardcoded test assertions) ====
+
+export type SeedCounts = {
+  users: number;
+  pamphlets: number;
+  courses: number;
+  exams: number;
+  sessions: number;
+  slots: number;
+};
+
+let _cachedCounts: SeedCounts | null = null;
+
+/**
+ * Read the seed's footprint from /api/v1/stats (exams + openSlots added in
+ * P13). Cached per vitest process — the seed runs ONCE before the whole
+ * suite, so the counts are stable for the run; call invalidateSeedCountsCache()
+ * if a test deliberately mutates them.
+ */
+export async function getSeedCounts(baseUrl: string): Promise<SeedCounts> {
+  if (_cachedCounts) return _cachedCounts;
+  const res = await fetch(`${baseUrl}/api/v1/stats`);
+  if (!res.ok) throw new Error(`getSeedCounts: /stats ${res.status}`);
+  const stats = (await res.json()) as {
+    pamphlets: number;
+    teachers: number;
+    courses: number;
+    exams: number;
+    sessions: number;
+    openSlots: number;
+  };
+  _cachedCounts = {
+    users: stats.teachers + 1, // seeded teachers + the one student
+    pamphlets: stats.pamphlets,
+    courses: stats.courses,
+    exams: stats.exams ?? 0,
+    sessions: stats.sessions,
+    slots: stats.openSlots ?? 0,
+  };
+  return _cachedCounts;
+}
+
+export function invalidateSeedCountsCache(): void {
+  _cachedCounts = null;
+}
 export async function createCourse(
   baseUrl: string,
   cookie: string,

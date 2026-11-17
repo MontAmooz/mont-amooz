@@ -11,25 +11,33 @@ test("courses list renders cards", async ({ page }) => {
 test("paid course shows locked lessons or is already owned", async ({ page }) => {
   const list = await page.request.get("/api/v1/courses?pageSize=48");
   const { items } = (await list.json()) as {
-    items?: Array<{ id: string; price: number; lessonCount: number }>;
+    items?: Array<{ id: string; price: number; lessonCount: number; studentCount: number }>;
   };
-  const paid = (items ?? []).find((c) => c.price > 0 && c.lessonCount > 0);
+  // P13: target a paid course the student does NOT already own (studentCount 0
+  // guarantees the locked-lessons view regardless of how many courses exist)
+  const paid = (items ?? []).find((c) => c.price > 0 && c.lessonCount > 0 && c.studentCount === 0);
   test.skip(!paid, "no paid course with lessons in seed");
   const cookie = await apiLogin(page.request, DEMO_STUDENT.email, DEMO_STUDENT.password);
   const p = await pageWithCookie(page.context().browser()!, cookie);
   await p.goto(`#/course/${paid!.id}`);
-  // hossein bought course 1 in seed — the detail must show EITHER a locked
-  // lesson indicator OR the owned-state "continue learning" button.
-  const locked = p.getByText(/قفل/).first();
-  const owned = p.getByRole("button", { name: "ادامهٔ یادگیری" });
-  await expect(locked.or(owned)).toBeVisible({ timeout: 20000 });
+  // non-owner on a paid course: lessons render locked (the lock state lives in
+  // each row's aria-label) and the aside shows the wallet-purchase CTA.
+  await expect(p.locator('[aria-label*="قفل"]').first()).toBeVisible({ timeout: 20000 });
+  await expect(p.getByRole("button", { name: "خرید با کیف پول" })).toBeVisible({
+    timeout: 10000,
+  });
   await p.context().close();
 });
 
 test("free course enroll flow completes without wallet", async ({ page }) => {
   const list = await page.request.get("/api/v1/courses?pageSize=48");
   const { items } = (await list.json()) as { items?: Array<{ id: string; price: number }> };
-  const free = (items ?? []).find((c) => c.price === 0);
+  // P13: skip free courses the student already enrolled in (via /learn)
+  const studentCookiePre = await apiLogin(page.request, DEMO_STUDENT.email, DEMO_STUDENT.password);
+  const learnRes = await page.request.get("/api/v1/learn", { headers: { cookie: studentCookiePre } });
+  const learnBody = (await learnRes.json()) as { items?: Array<{ id: string }> };
+  const ownedIds = new Set((learnBody.items ?? []).map((c) => c.id));
+  const free = (items ?? []).find((c) => c.price === 0 && !ownedIds.has(c.id));
   test.skip(!free, "no free course in seed");
   const cookie = await apiLogin(page.request, DEMO_STUDENT.email, DEMO_STUDENT.password);
   const p = await pageWithCookie(page.context().browser()!, cookie);
