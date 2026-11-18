@@ -116,7 +116,11 @@ test("read notifications lose their unread indicator", async ({ page }) => {
   const row = p.getByRole("button").filter({ hasText: "بازخورد جدید" }).first();
   await expect(row).toBeVisible({ timeout: 30000 });
   await expect(row.getByLabel("خوانده‌نشده")).toBeVisible();
-  await row.click(); // navigates away and marks read
+  await row.click(); // marks read, then the app navigates to the pamphlet
+  // wait out the in-app navigation: openNotification awaits the mark-read POST
+  // *before* navigate() — a goto back to #/notifications that races it loses and
+  // the SPA lands on the pamphlet instead (P15 baseline: this failed 2/2 locally).
+  await expect(p).toHaveURL(new RegExp(`#/pamphlet/${id}`), { timeout: 10000 });
 
   await p.goto("#/notifications");
   const readRow = p.getByRole("button").filter({ hasText: "بازخورد جدید" }).first();
