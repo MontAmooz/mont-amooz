@@ -38,9 +38,11 @@ export interface NotificationItem {
   createdAt: string;
 }
 
-// ===================== P12 — Exam Builder =====================
+// ===================== P12 — Exam Builder (P14: essay + timer) =====================
 
 export type ExamOption = { id: string; text: string };
+export type ExamQuestionType = "MC" | "ESSAY";
+export type ExamAttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "GRADED";
 
 export interface ExamSummary {
   id: string;
@@ -49,6 +51,7 @@ export interface ExamSummary {
   grade: string;
   subject: string;
   published: boolean;
+  durationMinutes: number | null;
   questionCount: number;
   attemptCount: number;
   /** mean percentage 0-100 across attempts; null when no attempts */
@@ -58,18 +61,19 @@ export interface ExamSummary {
   updatedAt: string;
 }
 
-/** Question shape for students — correctOptionId stripped. */
+/** Question shape for students — correctOptionId stripped; options null for ESSAY. */
 export interface ExamQuestionStudent {
   id: string;
   order: number;
   text: string;
-  options: ExamOption[];
+  type: ExamQuestionType;
+  options: ExamOption[] | null;
   points: number;
 }
 
-/** Question shape for the owner (teacher) only. */
+/** Question shape for the owner (teacher) only. correctOptionId null for ESSAY. */
 export interface ExamQuestionTeacher extends ExamQuestionStudent {
-  correctOptionId: string;
+  correctOptionId: string | null;
 }
 
 export interface ExamDetailTeacher extends ExamSummary {
@@ -82,9 +86,12 @@ export interface ExamDetailStudent extends ExamSummary {
   isMine: false;
   myAttempt: {
     id: string;
+    status: ExamAttemptStatus;
+    autoScore: number;
+    manualScore: number | null;
     score: number;
     maxScore: number;
-    submittedAt: string;
+    submittedAt: string | null;
   } | null;
 }
 
@@ -94,27 +101,38 @@ export interface ExamAttemptDetail {
   id: string;
   exam: { id: string; title: string };
   student: { id: string; fullName: string };
-  score: number;
+  status: ExamAttemptStatus;
+  autoScore: number;
+  manualScore: number | null;
+  totalScore: number;
   maxScore: number;
-  submittedAt: string;
+  startedAt: string | null;
+  submittedAt: string | null;
+  timeLimitReached: boolean;
   questions: Array<{
     id: string;
     order: number;
     text: string;
-    options: ExamOption[];
+    type: ExamQuestionType;
+    options: ExamOption[] | null;
     points: number;
-    correctOptionId: string;
-    myOptionId: string;
-    isCorrect: boolean;
+    correctOptionId: string | null;
+    studentAnswer: string | null;
+    isCorrect: boolean | null;
+    awardedPoints: number | null;
+    teacherComment: string | null;
   }>;
 }
 
 export interface MyExamAttemptSummary {
   id: string;
   exam: { id: string; title: string; grade: string; subject: string };
+  status: ExamAttemptStatus;
+  autoScore: number;
+  manualScore: number | null;
   score: number;
   maxScore: number;
-  submittedAt: string;
+  submittedAt: string | null;
 }
 
 export interface ExamListResponse {

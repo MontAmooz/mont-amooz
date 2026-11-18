@@ -14,6 +14,7 @@ const QUESTION_SELECT = {
   id: true,
   order: true,
   text: true,
+  type: true,
   options: true,
   correctOptionId: true,
   points: true,
@@ -39,18 +40,32 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   // drafts are visible to the owner only
   if (!exam.published && !isMine) return fail("آزمون پیدا نشد", 404);
 
-  let myAttempt: { id: string; score: number; maxScore: number; submittedAt: string } | null = null;
+  let myAttempt: {
+    id: string;
+    status: "IN_PROGRESS" | "SUBMITTED" | "GRADED";
+    autoScore: number;
+    manualScore: number | null;
+    score: number;
+    maxScore: number;
+    submittedAt: string | null;
+  } | null = null;
   if (viewer && !isMine) {
     const attempt = await db.examAttempt.findUnique({
       where: { examId_studentId: { examId: exam.id, studentId: viewer.id } },
-      select: { id: true, score: true, maxScore: true, submittedAt: true },
+      select: {
+        id: true, status: true, autoScore: true, manualScore: true,
+        score: true, maxScore: true, submittedAt: true,
+      },
     });
     myAttempt = attempt
       ? {
           id: attempt.id,
+          status: attempt.status as "IN_PROGRESS" | "SUBMITTED" | "GRADED",
+          autoScore: attempt.autoScore,
+          manualScore: attempt.manualScore,
           score: attempt.score,
           maxScore: attempt.maxScore,
-          submittedAt: attempt.submittedAt.toISOString(),
+          submittedAt: attempt.submittedAt?.toISOString() ?? null,
         }
       : null;
   }
@@ -83,6 +98,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     select: {
       id: true,
       teacherId: true,
+      durationMinutes: true,
       _count: { select: { attempts: true } },
     },
   });
@@ -98,6 +114,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     grade?: string;
     subject?: string;
     published?: boolean;
+    durationMinutes?: number | null;
   } = {};
 
   if (body.title !== undefined) {
@@ -125,6 +142,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (body.published !== undefined) {
     if (typeof body.published !== "boolean") return fail("وضعیت انتشار نامعتبر است");
     data.published = body.published;
+  }
+  if (body.durationMinutes !== undefined) {
+    // P14 — timer length locks once any attempt exists (startedAt is set)
+    const hasAttempts = exam._count.attempts > 0;
+    if (hasAttempts && body.durationMinutes !== exam.durationMinutes) {
+      return fail("نمی‌توانید زمان را بعد از اولین شرکت‌کننده تغییر دهید");
+    }
+    if (body.durationMinutes === null) {
+      data.durationMinutes = null;
+    } else if (
+      typeof body.durationMinutes === "number" &&
+      Number.isInteger(body.durationMinutes) &&
+      body.durationMinutes >= 1 &&
+      body.durationMinutes <= 240
+    ) {
+      data.durationMinutes = body.durationMinutes;
+    } else {
+      return fail("مدت آزمون باید بین ۱ تا ۲۴۰ دقیقه باشد");
+    }
   }
 
   const hasAttempts = exam._count.attempts > 0;

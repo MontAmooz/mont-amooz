@@ -423,18 +423,19 @@ model Notification {
 
 // ===================== P12 — Exam Builder =====================
 
-// Teacher-authored multiple-choice exam (P12 MVP). Draft until published;
-// questions lock once any attempt exists.
+// Teacher-authored exam (P12 MVP, P14 polish: essay questions + timer).
+// Draft until published; questions lock once any attempt exists.
 model Exam {
-  id          String    @id @default(cuid())
-  teacherId   String
-  title       String
-  description String?
-  grade       String
-  subject     String
-  published   Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  teacherId       String
+  title           String
+  description     String?
+  grade           String
+  subject         String
+  published       Boolean   @default(false)
+  durationMinutes Int? // P14 — null = no timer; 1..240 enforced at API level
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   teacher   User          @relation("AuthoredExams", fields: [teacherId], references: [id])
   questions ExamQuestion[]
@@ -444,18 +445,18 @@ model Exam {
   @@index([teacherId])
 }
 
-// One MC question. `options` is a JSON string of {id, text} — options are
-// immutable per question, never queried alone, never joined; JSON keeps the
-// schema flat. correctOptionId is stripped from non-owner API responses.
+// One exam question. type="MC" carries options JSON + correctOptionId;
+// type="ESSAY" has null options/correctOptionId and is graded by the teacher.
 model ExamQuestion {
-  id               String   @id @default(cuid())
-  examId           String
-  order            Int
-  text             String
-  options          String   // JSON array of {id, text}
-  correctOptionId  String
-  points           Int      @default(1)
-  createdAt        DateTime @default(now())
+  id              String   @id @default(cuid())
+  examId          String
+  order           Int
+  text            String
+  type            String   @default("MC") // "MC" | "ESSAY"
+  options         String? // JSON array of {id, text} — MC only, null for ESSAY
+  correctOptionId String? // MC only; null for ESSAY (teacher-graded)
+  points          Int      @default(1)
+  createdAt       DateTime @default(now())
 
   exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
 
@@ -463,16 +464,24 @@ model ExamQuestion {
   @@index([examId])
 }
 
-// A student's graded attempt. Single attempt per student per exam, enforced
-// by the unique constraint. `answers` is a JSON map: { [questionId]: optionId }.
+// A student's attempt. P14 lifecycle: IN_PROGRESS (created by /start) →
+// SUBMITTED (auto-graded MC done; awaits essay grading when hasEssay) →
+// GRADED (teacher scored essays). Legacy P12 rows migrate to GRADED with
+// autoScore = score. answers: JSON { [questionId]: optionId | essayText }.
 model ExamAttempt {
-  id          String   @id @default(cuid())
-  examId      String
-  studentId   String
-  answers     String   // JSON: { [questionId]: optionId }
-  score       Int
-  maxScore    Int
-  submittedAt DateTime @default(now())
+  id               String    @id @default(cuid())
+  examId           String
+  studentId        String
+  status           String    @default("GRADED") // "IN_PROGRESS" | "SUBMITTED" | "GRADED"
+  answers          String? // JSON: { [questionId]: optionId | essayText }; null until submit
+  autoScore        Int       @default(0) // points from auto-graded MC
+  manualScore      Int? // points from teacher-graded essays
+  gradings         String? // JSON array of {questionId, awardedPoints, teacherComment}
+  score            Int       @default(0) // legacy = autoScore when no manual grading; autoScore+manualScore after
+  maxScore         Int
+  startedAt        DateTime? // when the student clicked شروع آزمون
+  submittedAt      DateTime? // submit (manual or auto on timeout)
+  timeLimitReached Boolean   @default(false)
 
   exam    Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
   student User @relation("TakenExams", fields: [studentId], references: [id])
@@ -480,4 +489,5 @@ model ExamAttempt {
   @@unique([examId, studentId])
   @@index([studentId])
   @@index([examId])
+  @@index([status])
 }

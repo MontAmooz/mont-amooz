@@ -21,9 +21,12 @@ export async function GET() {
       grade: a.exam.grade,
       subject: a.exam.subject,
     },
+    status: a.status as MyExamAttemptSummary["status"],
+    autoScore: a.autoScore,
+    manualScore: a.manualScore,
     score: a.score,
     maxScore: a.maxScore,
-    submittedAt: a.submittedAt.toISOString(),
+    submittedAt: a.submittedAt?.toISOString() ?? null,
   }));
   return ok({ items });
 }

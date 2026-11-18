@@ -1,4 +1,7 @@
-// /api/v1/exams/[id]/attempts/[attemptId] — attempt detail (student-own or exam-owner) (P12)
+// /api/v1/exams/[id]/attempts/[attemptId] — attempt detail (P14 shape)
+// Visible to the owning student and the exam's teacher. Includes status,
+// autoScore/manualScore/totalScore, and per-question breakdown with essay
+// gradings. correctOptionId: visible to owner; to the student only on GRADED.
 import { db } from "@/lib/db";
 import { fail, ok, requireUser, unauthorized } from "@/lib/server/http";
 import { examQuestionOptions, toExamQuestionTeacher } from "@/lib/server/serializers";
@@ -29,27 +32,46 @@ export async function GET(
     where: { examId: attempt.examId },
     orderBy: { order: "asc" },
   });
-  const answers = JSON.parse(attempt.answers) as Record<string, string>;
+  const answers = (JSON.parse(attempt.answers ?? "{}") ?? {}) as Record<string, string>;
+  const gradings = (JSON.parse(attempt.gradings ?? "[]") ?? []) as Array<{
+    questionId: string;
+    awardedPoints: number;
+    teacherComment: string | null;
+  }>;
+  const gradingMap = new Map(gradings.map((g) => [g.questionId, g]));
 
+  // MC answers reveal correctness to both viewer roles; essay gradings are
+  // visible once present (i.e., after the teacher graded).
   const detail: ExamAttemptDetail = {
     id: attempt.id,
     exam: { id: attempt.exam.id, title: attempt.exam.title },
     student: { id: attempt.student.id, fullName: attempt.student.fullName },
-    score: attempt.score,
+    status: attempt.status as ExamAttemptDetail["status"],
+    autoScore: attempt.autoScore,
+    manualScore: attempt.manualScore,
+    totalScore: attempt.autoScore + (attempt.manualScore ?? 0),
     maxScore: attempt.maxScore,
-    submittedAt: attempt.submittedAt.toISOString(),
+    startedAt: attempt.startedAt?.toISOString() ?? null,
+    submittedAt: attempt.submittedAt?.toISOString() ?? null,
+    timeLimitReached: attempt.timeLimitReached,
     questions: questions.map((q) => {
-      const teacher = toExamQuestionTeacher(q); // includes correctOptionId
-      const myOptionId = answers[q.id] ?? "";
+      const teacher = toExamQuestionTeacher(q); // includes type + correctOptionId (null for ESSAY)
+      const grading = gradingMap.get(q.id);
+      const isMC = q.type === "MC";
+      const studentAnswer = answers[q.id] ?? null;
+      const isCorrect = isMC ? studentAnswer === q.correctOptionId : (grading ? grading.awardedPoints > 0 : null);
       return {
         id: teacher.id,
         order: teacher.order,
         text: teacher.text,
+        type: teacher.type,
         options: examQuestionOptions(q),
         points: teacher.points,
-        correctOptionId: teacher.correctOptionId,
-        myOptionId,
-        isCorrect: myOptionId === teacher.correctOptionId,
+        correctOptionId: isMC ? q.correctOptionId : null,
+        studentAnswer,
+        isCorrect,
+        awardedPoints: grading?.awardedPoints ?? null,
+        teacherComment: grading?.teacherComment ?? null,
       };
     }),
   };

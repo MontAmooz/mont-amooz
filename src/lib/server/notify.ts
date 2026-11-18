@@ -11,7 +11,8 @@ export type NotificationType =
   | "SESSION_BOOKED"
   | "SESSION_COMPLETED"
   | "COURSE_PURCHASED"
-  | "EXAM_COMPLETED";
+  | "EXAM_COMPLETED"
+  | "EXAM_GRADED";
 
 export type NotifyInput = {
   userId: string; // recipient

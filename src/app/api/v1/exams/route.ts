@@ -1,11 +1,20 @@
 // /api/v1/exams — GET (list, published by default; mine=true for the owner)
-// + POST (teacher creates with questions) (P12)
+// + POST (teacher creates with MC/ESSAY questions) (P12, P14)
 import { db } from "@/lib/db";
 import { GRADES, SUBJECTS } from "@/lib/constants";
 import { normalizePersian } from "@/lib/format";
 import { asString, fail, ok, oneOf, readJson, requireUser, unauthorized } from "@/lib/server/http";
 import { parseExamQuestions, toExamSummary } from "@/lib/server/serializers";
 import type { ExamListResponse } from "@/lib/types";
+
+/** Validate durationMinutes: 1..240 or null. */
+function parseDuration(raw: unknown): number | null | string {
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw !== "number" || !Number.isInteger(raw) || raw < 1 || raw > 240) {
+    return "مدت آزمون باید بین ۱ تا ۲۴۰ دقیقه باشد";
+  }
+  return raw;
+}
 
 // ---------- GET: list ----------
 export async function GET(req: Request) {
@@ -76,6 +85,8 @@ export async function POST(req: Request) {
   const subject = oneOf(body.subject, SUBJECTS);
   if (!subject) return fail("درس نامعتبر است");
   const published = body.published === true;
+  const durationMinutes = parseDuration(body.durationMinutes);
+  if (typeof durationMinutes === "string") return fail(durationMinutes);
 
   const questions = parseExamQuestions(body.questions);
   if (typeof questions === "string") return fail(questions);
@@ -88,11 +99,13 @@ export async function POST(req: Request) {
       grade,
       subject,
       published,
+      durationMinutes,
       questions: {
         create: questions.map((q, i) => ({
           order: i + 1,
           text: q.text,
-          options: JSON.stringify(q.options),
+          type: q.type,
+          options: q.options ? JSON.stringify(q.options) : null,
           correctOptionId: q.correctOptionId,
           points: q.points,
         })),

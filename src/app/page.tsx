@@ -14,6 +14,7 @@ import CoursesView from "@/components/edu/courses-view";
 import { CreateView } from "@/components/edu/create-view";
 import { EditView } from "@/components/edu/edit-view";
 import { ExamCreateView } from "@/components/edu/exam-create-view";
+import { ExamGradeView } from "@/components/edu/exam-grade-view";
 import { ExamResultView } from "@/components/edu/exam-result-view";
 import { ExamView } from "@/components/edu/exam-view";
 import { ExamsView } from "@/components/edu/exams-view";
@@ -208,6 +209,18 @@ export default function Page() {
         return <ExamView key={route.id} id={route.id} />;
       case "exam-result":
         return <ExamResultView key={route.attemptId} examId={route.id} attemptId={route.attemptId} />;
+      case "exam-grade":
+        if (!sessionLoaded) return null;
+        return user ? (
+          <ExamGradeView key={route.attemptId} examId={route.id} attemptId={route.attemptId} />
+        ) : (
+          <div className="mx-auto max-w-7xl px-4 py-16">
+            <AuthRequiredBox
+              title="برای تصحیح آزمون وارد حساب کاربری شوید"
+              hint="تصحیح فقط برای نویسندهٔ آزمون است."
+            />
+          </div>
+        );
       default:
         return <HomeView params={{}} />;
     }
