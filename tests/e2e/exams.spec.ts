@@ -57,8 +57,8 @@ test("student takes the exam, sees the graded result, cannot retake", async ({ p
       subject: "ریاضی",
       published: true,
       questions: [
-        { text: "حاصل ۵−۲ چیست؟", options: [{ text: "۳" }, { text: "۷" }], correctOptionIndex: 0, points: 4 },
-        { text: "حاصل ۶÷۲ چیست؟", options: [{ text: "۴" }, { text: "۳" }], correctOptionIndex: 1, points: 6 },
+        { type: "MC", text: "حاصل ۵−۲ چیست؟", options: [{ text: "۳" }, { text: "۷" }], correctOptionIndex: 0, points: 4 },
+        { type: "MC", text: "حاصل ۶÷۲ چیست؟", options: [{ text: "۴" }, { text: "۳" }], correctOptionIndex: 1, points: 6 },
       ],
     },
   });
@@ -71,6 +71,10 @@ test("student takes the exam, sees the graded result, cannot retake", async ({ p
   const studentCookie = await apiLogin(page.request, DEMO_STUDENT.email, DEMO_STUDENT.password);
   const p = await pageWithCookie(page.context().browser()!, studentCookie);
   await p.goto(`#/exam/${examId}`);
+
+  // P14 — start gate: شروع آزمون creates the IN_PROGRESS attempt server-side
+  await p.getByRole("button", { name: "شروع آزمون" }).click();
+  await p.getByRole("button", { name: "ارسال پاسخ‌ها" }).waitFor({ timeout: 20000 });
 
   // answer Q1 correctly (۳) and Q2 wrongly (۴) — radios are in document order:
   // Q1-opt1, Q1-opt2, Q2-opt1, Q2-opt2
@@ -99,7 +103,7 @@ test("teacher sees the attempt in نتایج and opens the breakdown", async ({ 
       grade: "دهم",
       subject: "ریاضی",
       published: true,
-      questions: [{ text: "۱۰÷۲ چیست؟", options: [{ text: "۵" }, { text: "۲" }], correctOptionIndex: 0, points: 10 }],
+      questions: [{ type: "MC", text: "۱۰÷۲ چیست؟", options: [{ text: "۵" }, { text: "۲" }], correctOptionIndex: 0, points: 10 }],
     },
   });
   const { id: examId } = (await setup.json()) as { id: string };
@@ -108,7 +112,12 @@ test("teacher sees the attempt in نتایج and opens the breakdown", async ({ 
   ).json()) as { questions: Array<{ id: string; correctOptionId?: string; options: { id: string }[] }> };
 
   const studentCookie = await apiLogin(page.request, DEMO_STUDENT.email, DEMO_STUDENT.password);
-  const submit = await page.request.post(`/api/v1/exams/${examId}/attempts`, {
+  const started = await page.request.post(`/api/v1/exams/${examId}/attempts/start`, {
+    headers: { Cookie: studentCookie },
+  });
+  expect(started.status()).toBe(201);
+  const { attemptId } = (await started.json()) as { attemptId: string };
+  const submit = await page.request.post(`/api/v1/exams/${examId}/attempts/${attemptId}/submit`, {
     headers: { Cookie: studentCookie },
     data: { answers: { [detail.questions[0].id]: detail.questions[0].options[1].id } }, // wrong on purpose
   });
@@ -136,7 +145,7 @@ test("question editing is blocked after an attempt, metadata still editable", as
       grade: "دهم",
       subject: "ریاضی",
       published: true,
-      questions: [{ text: "۲×۲؟", options: [{ text: "۴" }, { text: "۵" }], correctOptionIndex: 0 }],
+      questions: [{ type: "MC", text: "۲×۲؟", options: [{ text: "۴" }, { text: "۵" }], correctOptionIndex: 0 }],
     },
   });
   const { id: examId } = (await setup.json()) as { id: string };
@@ -145,7 +154,11 @@ test("question editing is blocked after an attempt, metadata still editable", as
   ).json()) as { questions: Array<{ id: string; correctOptionId?: string }> };
 
   const studentCookie = await apiLogin(page.request, DEMO_STUDENT.email, DEMO_STUDENT.password);
-  await page.request.post(`/api/v1/exams/${examId}/attempts`, {
+  const started = await page.request.post(`/api/v1/exams/${examId}/attempts/start`, {
+    headers: { Cookie: studentCookie },
+  });
+  const { attemptId } = (await started.json()) as { attemptId: string };
+  await page.request.post(`/api/v1/exams/${examId}/attempts/${attemptId}/submit`, {
     headers: { Cookie: studentCookie },
     data: { answers: { [detail.questions[0].id]: detail.questions[0].correctOptionId! } },
   });

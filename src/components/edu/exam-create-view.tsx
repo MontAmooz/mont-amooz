@@ -35,18 +35,23 @@ interface DraftOption {
 }
 interface DraftQuestion {
   text: string;
+  type: "MC" | "ESSAY";
   options: DraftOption[];
   correctIndex: number;
   points: number;
 }
 
-function emptyQuestion(): DraftQuestion {
+function emptyQuestion(type: "MC" | "ESSAY" = "MC"): DraftQuestion {
   return {
     text: "",
-    options: [
-      { id: crypto.randomUUID(), text: "" },
-      { id: crypto.randomUUID(), text: "" },
-    ],
+    type,
+    options:
+      type === "MC"
+        ? [
+            { id: crypto.randomUUID(), text: "" },
+            { id: crypto.randomUUID(), text: "" },
+          ]
+        : [],
     correctIndex: 0,
     points: 1,
   };
@@ -63,6 +68,7 @@ export function ExamCreateView({ editId }: { editId?: string }) {
   const [grade, setGrade] = useState("");
   const [subject, setSubject] = useState("");
   const [published, setPublished] = useState(false);
+  const [durationMinutes, setDurationMinutes] = useState<string>("");
   const [questions, setQuestions] = useState<DraftQuestion[]>([emptyQuestion()]);
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -83,7 +89,8 @@ export function ExamCreateView({ editId }: { editId?: string }) {
           published: boolean;
           isMine: boolean;
           attemptCount: number;
-          questions: Array<{ text: string; options: { id: string; text: string }[]; correctOptionId: string; points: number }>;
+          durationMinutes: number | null;
+          questions: Array<{ text: string; type: string; options: { id: string; text: string }[] | null; correctOptionId: string | null; points: number }>;
         }>(`/exams/${editId}`);
         if (cancelled) return;
         if (!exam.isMine) {
@@ -98,15 +105,20 @@ export function ExamCreateView({ editId }: { editId?: string }) {
         setPublished(exam.published);
         setAttemptsExist(exam.attemptCount > 0);
         setQuestions(
-          exam.questions.map((q) => ({
-            text: q.text,
-            options: q.options.map((o) => ({ id: o.id, text: o.text })),
-            correctIndex: Math.max(
-              0,
-              q.options.findIndex((o) => o.id === q.correctOptionId)
-            ),
-            points: q.points,
-          }))
+          exam.questions.map((q) => {
+            const type: "MC" | "ESSAY" = q.type === "ESSAY" ? "ESSAY" : "MC";
+            const opts = (q.options ?? []).map((o) => ({ id: o.id, text: o.text }));
+            return {
+              text: q.text,
+              type,
+              options: type === "MC" ? opts : [],
+              correctIndex:
+                type === "MC"
+                  ? Math.max(0, opts.findIndex((o) => o.id === q.correctOptionId))
+                  : 0,
+              points: q.points,
+            };
+          })
         );
         setLoaded(true);
       } catch (err) {
@@ -152,6 +164,10 @@ export function ExamCreateView({ editId }: { editId?: string }) {
       )
     );
   }
+  /** Switch a question's type — resets its answer structure (MC options / essay clears). */
+  function emptyQuestionPatch(type: "MC" | "ESSAY"): Partial<DraftQuestion> {
+    return { ...emptyQuestion(type) };
+  }
 
   function validateStep1(): boolean {
     if (title.trim().length < 3 || title.trim().length > 120) {
@@ -171,11 +187,23 @@ export function ExamCreateView({ editId }: { editId?: string }) {
       toast({ title: "آزمون باید بین ۱ تا ۵۰ سؤال داشته باشد", variant: "destructive" });
       return false;
     }
+    if (durationMinutes) {
+      const dm = Number(durationMinutes);
+      if (!Number.isInteger(dm) || dm < 1 || dm > 240) {
+        toast({ title: "مدت آزمون باید بین ۱ تا ۲۴۰ دقیقه باشد", variant: "destructive" });
+        return false;
+      }
+    }
     for (const [i, q] of questions.entries()) {
       if (q.text.trim().length < 2 || q.text.trim().length > 500) {
         toast({ title: `متن سؤال ${i + 1} باید بین ۲ تا ۵۰۰ نویسه باشد`, variant: "destructive" });
         return false;
       }
+      if (q.points < 1 || q.points > 10) {
+        toast({ title: `امتیاز سؤال ${i + 1} باید بین ۱ تا ۱۰ باشد`, variant: "destructive" });
+        return false;
+      }
+      if (q.type === "ESSAY") continue;
       const filled = q.options.filter((o) => o.text.trim().length > 0);
       if (filled.length < 2 || filled.length > 4 || filled.length !== q.options.length) {
         toast({ title: `سؤال ${i + 1} باید بین ۲ تا ۴ گزینهٔ پرشده داشته باشد`, variant: "destructive" });
@@ -183,10 +211,6 @@ export function ExamCreateView({ editId }: { editId?: string }) {
       }
       if (q.correctIndex < 0 || q.correctIndex >= q.options.length) {
         toast({ title: `گزینهٔ صحیح سؤال ${i + 1} را مشخص کنید`, variant: "destructive" });
-        return false;
-      }
-      if (q.points < 1 || q.points > 10) {
-        toast({ title: `امتیاز سؤال ${i + 1} باید بین ۱ تا ۱۰ باشد`, variant: "destructive" });
         return false;
       }
     }
@@ -208,15 +232,21 @@ export function ExamCreateView({ editId }: { editId?: string }) {
         grade,
         subject,
         published,
+        durationMinutes: durationMinutes ? Number(durationMinutes) : null,
         ...(attemptsExist
           ? {}
           : {
-              questions: questions.map((q) => ({
-                text: q.text.trim(),
-                options: q.options.map((o) => ({ text: o.text.trim() })),
-                correctOptionIndex: q.correctIndex,
-                points: q.points,
-              })),
+              questions: questions.map((q) =>
+                q.type === "ESSAY"
+                  ? { type: "ESSAY", text: q.text.trim(), points: q.points }
+                  : {
+                      type: "MC",
+                      text: q.text.trim(),
+                      options: q.options.map((o) => ({ text: o.text.trim() })),
+                      correctOptionIndex: q.correctIndex,
+                      points: q.points,
+                    }
+              ),
             }),
       };
       if (isEdit) {
@@ -334,6 +364,22 @@ export function ExamCreateView({ editId }: { editId?: string }) {
               />
               انتشار فوری (در غیر این صورت پیش‌نویس ذخیره می‌شود)
             </label>
+            <div className="space-y-1.5">
+              <Label htmlFor="exam-duration" className="text-sm font-black">
+                مدت آزمون به دقیقه (اختیاری)
+              </Label>
+              <Input
+                id="exam-duration"
+                type="number"
+                min={1}
+                max={240}
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(e.target.value)}
+                placeholder="خالی = بدون محدودیت زمان"
+                className="oeg-mono h-11 w-40 border-2 bg-white md:h-10"
+              />
+              <p className="text-xs text-gray-400">۱ تا ۲۴۰ دقیقه — پس از شروع، از سمت سرور کنترل می‌شود.</p>
+            </div>
           </div>
         )}
 
@@ -364,6 +410,29 @@ export function ExamCreateView({ editId }: { editId?: string }) {
                   className="h-11 border-2 bg-white md:h-10"
                   disabled={attemptsExist}
                 />
+
+                {/* P14 — question type radio (MC | ESSAY) */}
+                <div className="mt-3 flex items-center gap-4" role="radiogroup" aria-label={`نوع سؤال ${qi + 1}`}>
+                  {(["MC", "ESSAY"] as const).map((t) => (
+                    <label key={t} className="flex cursor-pointer items-center gap-1.5 text-xs font-bold text-gray-600">
+                      <input
+                        type="radio"
+                        name={`type-${qi}`}
+                        checked={q.type === t}
+                        onChange={() => setQuestion(qi, emptyQuestionPatch(t))}
+                        className="accent-primary"
+                        disabled={attemptsExist}
+                      />
+                      {t === "MC" ? "چهارگزینه‌ای" : "تشریحی"}
+                    </label>
+                  ))}
+                  {q.type === "ESSAY" && (
+                    <span className="text-xs text-gold">پاسخ‌ها توسط شما تصحیح می‌شوند</span>
+                  )}
+                </div>
+
+                {q.type === "MC" && (
+                  <>
                 <div className="mt-3 space-y-2">
                   {q.options.map((o, oi) => (
                     <div key={o.id} className="flex items-center gap-2">
@@ -436,6 +505,8 @@ export function ExamCreateView({ editId }: { editId?: string }) {
                     />
                   </label>
                 </div>
+                  </>
+                )}
               </fieldset>
             ))}
             {!attemptsExist && (
@@ -481,13 +552,18 @@ export function ExamCreateView({ editId }: { editId?: string }) {
               {questions.map((q, qi) => (
                 <li key={qi} className="border-2 border-gray-200 p-3 text-sm">
                   <b>{faNumber(qi + 1)}. {q.text}</b>
-                  <ul className="mt-1 space-y-0.5 text-gray-600">
-                    {q.options.map((o, oi) => (
-                      <li key={o.id} className={cn(oi === q.correctIndex && "font-black text-success")}>
-                        {oi === q.correctIndex ? "✓" : "○"} {o.text}
-                      </li>
-                    ))}
-                  </ul>
+                  <span className="ms-2 text-xs text-gray-400">({q.type === "ESSAY" ? "تشریحی" : "چهارگزینه‌ای"})</span>
+                  {q.type === "MC" ? (
+                    <ul className="mt-1 space-y-0.5 text-gray-600">
+                      {q.options.map((o, oi) => (
+                        <li key={o.id} className={cn(oi === q.correctIndex && "font-black text-success")}>
+                          {oi === q.correctIndex ? "✓" : "○"} {o.text}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-xs text-gray-500">سؤال تشریحی — پس از ارسال توسط شما تصحیح می‌شود.</p>
+                  )}
                 </li>
               ))}
             </ol>

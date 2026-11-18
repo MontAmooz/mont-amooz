@@ -36,6 +36,8 @@ function NotificationIcon({ type, unread }: { type: string; unread: boolean }) {
       return <ShoppingBag className="size-4" aria-hidden="true" />;
     case "EXAM_COMPLETED":
       return <ClipboardCheck className="size-4" aria-hidden="true" />;
+    case "EXAM_GRADED":
+      return <CheckCircle className="size-4" aria-hidden="true" />;
     default:
       return <GitMerge className="size-4" aria-hidden="true" />;
   }

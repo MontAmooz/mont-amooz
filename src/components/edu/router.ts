@@ -52,12 +52,13 @@ export type Route =
   | { name: "reset" }
   // P11 — notifications
   | { name: "notifications" }
-  // P12 — exam builder
+  // P12 — exam builder (P14: + grade route)
   | { name: "exams"; mine: boolean }
   | { name: "exam-new" }
   | { name: "exam-edit"; id: string }
   | { name: "exam"; id: string }
-  | { name: "exam-result"; id: string; attemptId: string };
+  | { name: "exam-result"; id: string; attemptId: string }
+  | { name: "exam-grade"; id: string; attemptId: string };
 
 const HOME: Route = { name: "home", params: {} };
 
@@ -116,6 +117,9 @@ export function parseHash(hash: string): Route {
   if (head === "exam" && id && extra === "result" && fourth) {
     return { name: "exam-result", id, attemptId: fourth };
   }
+  if (head === "exam" && id && extra === "attempt" && fourth) {
+    return { name: "exam-grade", id, attemptId: fourth };
+  }
   if (head === "exam" && id && extra === "edit") return { name: "exam-edit", id };
   if (head === "exam" && id === "new") return { name: "exam-new" };
   if (head === "exam" && id) return { name: "exam", id };
@@ -158,6 +162,16 @@ export function parseHash(hash: string): Route {
       return { name: "notifications" };
     case "exams":
       return { name: "exams", mine: false };
+    case "exam":
+      return { name: "exam", id: id ?? "" };
+    case "exam-new":
+      return { name: "exam-new" };
+    case "exam-edit":
+      return id ? { name: "exam-edit", id } : { name: "exams", mine: true };
+    case "exam-result":
+      return id ? { name: "exam-result", id, attemptId: extra ?? "" } : { name: "exams", mine: false };
+    case "exam-grade":
+      return id ? { name: "exam-grade", id, attemptId: extra ?? "" } : { name: "exams", mine: false };
     default:
       return HOME;
   }

@@ -6,6 +6,7 @@ import type {
   CourseCard,
   CourseReviewItem,
   ExamOption,
+  ExamQuestionType,
   ExamQuestionStudent,
   ExamQuestionTeacher,
   ExamSummary,
@@ -405,6 +406,7 @@ export type ExamRow = {
   grade: string;
   subject: string;
   published: boolean;
+  durationMinutes: number | null;
   createdAt: Date;
   updatedAt: Date;
   teacher: { id: string; fullName: string; title: string | null };
@@ -429,6 +431,7 @@ export function toExamSummary(e: ExamRow): ExamSummary {
     grade: e.grade,
     subject: e.subject,
     published: e.published,
+    durationMinutes: e.durationMinutes,
     questionCount: e._count?.questions ?? 0,
     attemptCount: e._count?.attempts ?? 0,
     avgScore,
@@ -442,13 +445,15 @@ export type ExamQuestionRow = {
   id: string;
   order: number;
   text: string;
-  options: string; // JSON [{id, text}]
-  correctOptionId: string;
+  type: string; // "MC" | "ESSAY"
+  options: string | null; // JSON [{id, text}] — MC only
+  correctOptionId: string | null;
   points: number;
 };
 
 /** Parse a question row's options JSON (defensive against malformed data). */
 export function examQuestionOptions(row: Pick<ExamQuestionRow, "options">): ExamOption[] {
+  if (!row.options) return [];
   try {
     const parsed: unknown = JSON.parse(row.options);
     if (!Array.isArray(parsed)) return [];
@@ -461,37 +466,53 @@ export function examQuestionOptions(row: Pick<ExamQuestionRow, "options">): Exam
   }
 }
 
-/** Map a question row to the teacher shape (includes correctOptionId). */
+/** Map a question row to the teacher shape (includes correctOptionId; null for ESSAY). */
 export function toExamQuestionTeacher(row: ExamQuestionRow): ExamQuestionTeacher {
   return {
     id: row.id,
     order: row.order,
     text: row.text,
-    options: examQuestionOptions(row),
+    type: (row.type as ExamQuestionType) ?? "MC",
+    options: row.type === "MC" ? examQuestionOptions(row) : null,
     points: row.points,
     correctOptionId: row.correctOptionId,
   };
 }
 
-/** Map a question row to the student shape (correctOptionId stripped). */
+/** Map a question row to the student shape (correctOptionId stripped; options null for ESSAY). */
 export function toExamQuestionStudent(row: ExamQuestionRow): ExamQuestionStudent {
   return {
     id: row.id,
     order: row.order,
     text: row.text,
-    options: examQuestionOptions(row),
+    type: (row.type as ExamQuestionType) ?? "MC",
+    options: row.type === "MC" ? examQuestionOptions(row) : null,
     points: row.points,
   };
 }
 
-/** Validate an exam-questions payload → normalized rows, or a Persian error. */
+/** Validate an exam-questions payload → normalized rows, or a Persian error.
+ * P14: question type "MC" (options + correctOptionIndex required) or "ESSAY"
+ * (options/correctOptionIndex forbidden). */
 export function parseExamQuestions(
   raw: unknown
-): { text: string; options: ExamOption[]; correctOptionId: string; points: number }[] | string {
+): {
+  text: string;
+  type: "MC" | "ESSAY";
+  options: ExamOption[] | null;
+  correctOptionId: string | null;
+  points: number;
+}[] | string {
   if (!Array.isArray(raw) || raw.length < 1) return "آزمون باید بین ۱ تا ۵۰ سؤال داشته باشد";
   if (raw.length > 50) return "آزمون باید بین ۱ تا ۵۰ سؤال داشته باشد";
 
-  const out: { text: string; options: ExamOption[]; correctOptionId: string; points: number }[] = [];
+  const out: {
+    text: string;
+    type: "MC" | "ESSAY";
+    options: ExamOption[] | null;
+    correctOptionId: string | null;
+    points: number;
+  }[] = [];
   for (const q of raw) {
     if (!q || typeof q !== "object") return "داده‌های سؤال نامعتبر است";
     const item = q as Record<string, unknown>;
@@ -499,6 +520,29 @@ export function parseExamQuestions(
     if (text.length < 2 || text.length > 500) {
       return "متن سؤال باید بین ۲ تا ۵۰۰ نویسه باشد";
     }
+    let points = 1;
+    if (item.points !== undefined && item.points !== null) {
+      if (typeof item.points !== "number" || !Number.isInteger(item.points) || item.points < 1 || item.points > 10) {
+        return "امتیاز هر سؤال باید بین ۱ تا ۱۰ باشد";
+      }
+      points = item.points;
+    }
+    const type = item.type === "ESSAY" ? "ESSAY" : item.type === "MC" ? "MC" : undefined;
+    if (!type) return "نوع سؤال باید «چهارگزینه‌ای» یا «تشریحی» باشد";
+
+    if (type === "ESSAY") {
+      // essay questions must not carry options or a correct index
+      if (item.options !== undefined && item.options !== null) {
+        return "سؤال تشریحی نباید گزینه داشته باشد";
+      }
+      if (item.correctOptionIndex !== undefined && item.correctOptionIndex !== null) {
+        return "سؤال تشریحی نباید گزینه داشته باشد";
+      }
+      out.push({ text, type: "ESSAY", options: null, correctOptionId: null, points });
+      continue;
+    }
+
+    // MC path — options + correct index required
     if (!Array.isArray(item.options)) return "هر سؤال باید بین ۲ تا ۴ گزینه داشته باشد";
     const optionTexts: string[] = [];
     for (const o of item.options) {
@@ -520,15 +564,8 @@ export function parseExamQuestions(
     ) {
       return "گزینهٔ صحیح نامعتبر است";
     }
-    let points = 1;
-    if (item.points !== undefined && item.points !== null) {
-      if (typeof item.points !== "number" || !Number.isInteger(item.points) || item.points < 1 || item.points > 10) {
-        return "امتیاز هر سؤال باید بین ۱ تا ۱۰ باشد";
-      }
-      points = item.points;
-    }
     const options: ExamOption[] = optionTexts.map((t) => ({ id: crypto.randomUUID(), text: t }));
-    out.push({ text, options, correctOptionId: options[correctIndex].id, points });
+    out.push({ text, type: "MC", options, correctOptionId: options[correctIndex].id, points });
   }
   return out;
 }

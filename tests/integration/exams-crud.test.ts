@@ -12,9 +12,10 @@ function examPayload(overrides: Record<string, unknown> = {}): Record<string, un
     grade: "دهم",
     subject: "ریاضی",
     published: false,
+    durationMinutes: null,
     questions: [
-      { text: "حاصل ۲+۲ چیست؟", options: [{ text: "۳" }, { text: "۴" }], correctOptionIndex: 1, points: 2 },
-      { text: "حاصل ۳×۳ چیست؟", options: [{ text: "۶" }, { text: "۹" }, { text: "۱۲" }], correctOptionIndex: 1 },
+      { type: "MC", text: "حاصل ۲+۲ چیست؟", options: [{ text: "۳" }, { text: "۴" }], correctOptionIndex: 1, points: 2 },
+      { type: "MC", text: "حاصل ۳×۳ چیست؟", options: [{ text: "۶" }, { text: "۹" }, { text: "۱۲" }], correctOptionIndex: 1 },
     ],
     ...overrides,
   };
@@ -56,7 +57,7 @@ describe("POST /exams", () => {
 
   test("51 questions → 400", async () => {
     const { cookie } = await registerUser(baseUrl());
-    const q = { text: "سؤال ساده؟", options: [{ text: "۱" }, { text: "۲" }], correctOptionIndex: 0 };
+    const q = { type: "MC", text: "سؤال ساده؟", options: [{ text: "۱" }, { text: "۲" }], correctOptionIndex: 0 };
     const r = await createExam(cookie, { questions: Array.from({ length: 51 }, () => q) });
     expect(r.status).toBe(400);
     expect((r.data as unknown as { error: string }).error).toBe("آزمون باید بین ۱ تا ۵۰ سؤال داشته باشد");
@@ -65,7 +66,7 @@ describe("POST /exams", () => {
   test("question with 1 option → 400", async () => {
     const { cookie } = await registerUser(baseUrl());
     const r = await createExam(cookie, {
-      questions: [{ text: "سؤال؟", options: [{ text: "فقط یکی" }], correctOptionIndex: 0 }],
+      questions: [{ type: "MC", text: "سؤال؟", options: [{ text: "فقط یکی" }], correctOptionIndex: 0 }],
     });
     expect(r.status).toBe(400);
     expect((r.data as unknown as { error: string }).error).toBe("هر سؤال باید بین ۲ تا ۴ گزینه داشته باشد");
@@ -76,6 +77,7 @@ describe("POST /exams", () => {
     const r = await createExam(cookie, {
       questions: [
         {
+          type: "MC",
           text: "سؤال؟",
           options: [{ text: "۱" }, { text: "۲" }, { text: "۳" }, { text: "۴" }, { text: "۵" }],
           correctOptionIndex: 0,
@@ -88,7 +90,7 @@ describe("POST /exams", () => {
   test("invalid correctOptionIndex → 400 «گزینهٔ صحیح نامعتبر است»", async () => {
     const { cookie } = await registerUser(baseUrl());
     const r = await createExam(cookie, {
-      questions: [{ text: "سؤال؟", options: [{ text: "۱" }, { text: "۲" }], correctOptionIndex: 5 }],
+      questions: [{ type: "MC", text: "سؤال؟", options: [{ text: "۱" }, { text: "۲" }], correctOptionIndex: 5 }],
     });
     expect(r.status).toBe(400);
     expect((r.data as unknown as { error: string }).error).toBe("گزینهٔ صحیح نامعتبر است");
@@ -97,7 +99,7 @@ describe("POST /exams", () => {
   test("points out of range → 400", async () => {
     const { cookie } = await registerUser(baseUrl());
     const r = await createExam(cookie, {
-      questions: [{ text: "سؤال؟", options: [{ text: "۱" }, { text: "۲" }], correctOptionIndex: 0, points: 11 }],
+      questions: [{ type: "MC", text: "سؤال؟", options: [{ text: "۱" }, { text: "۲" }], correctOptionIndex: 0, points: 11 }],
     });
     expect(r.status).toBe(400);
     expect((r.data as unknown as { error: string }).error).toBe("امتیاز هر سؤال باید بین ۱ تا ۱۰ باشد");
@@ -222,11 +224,17 @@ describe("PATCH /exams/[id]", () => {
     const q = detail.data.questions[0];
     const correctId = (q as { correctOptionId: string }).correctOptionId;
 
-    const attempt = await api(baseUrl(), `/api/v1/exams/${created.id}/attempts`, {
-      method: "POST",
-      cookie: student.cookie,
-      json: { answers: { [q.id]: correctId } },
-    });
+    const started = await api<{ attemptId: string }>(
+      baseUrl(),
+      `/api/v1/exams/${created.id}/attempts/start`,
+      { method: "POST", cookie: student.cookie }
+    );
+    expect(started.status).toBe(201);
+    const attempt = await api(
+      baseUrl(),
+      `/api/v1/exams/${created.id}/attempts/${started.data.attemptId}/submit`,
+      { method: "POST", cookie: student.cookie, json: { answers: { [q.id]: correctId } } }
+    );
     expect(attempt.status).toBe(201);
 
     const qEdit = await api(baseUrl(), `/api/v1/exams/${created.id}`, {
@@ -263,7 +271,12 @@ describe("DELETE /exams/[id]", () => {
     const q = detail.data.questions[0];
 
     // an attempt exists → cascade must remove it
-    await api(baseUrl(), `/api/v1/exams/${created.id}/attempts`, {
+    const started = await api<{ attemptId: string }>(
+      baseUrl(),
+      `/api/v1/exams/${created.id}/attempts/start`,
+      { method: "POST", cookie: student.cookie }
+    );
+    await api(baseUrl(), `/api/v1/exams/${created.id}/attempts/${started.data.attemptId}/submit`, {
       method: "POST",
       cookie: student.cookie,
       json: { answers: { [q.id]: (q as { correctOptionId: string }).correctOptionId } },
@@ -291,5 +304,112 @@ describe("DELETE /exams/[id]", () => {
       { cookie: student.cookie }
     );
     expect(history.data.items.some((a) => a.exam.id === created.id)).toBe(false);
+  });
+});
+
+
+// ===================== P14 — essay questions + timer =====================
+
+describe("POST /exams — P14 essay + durationMinutes validation", () => {
+  test("valid ESSAY question → 201", async () => {
+    const { cookie } = await registerUser(baseUrl());
+    const r = await createExam(cookie, {
+      questions: [{ type: "ESSAY", text: "مفهوم مشتق را با مثال توضیح دهید.", points: 5 }],
+    });
+    expect(r.status).toBe(201);
+  });
+
+  test("ESSAY question with options → 400 «سؤال تشریحی نباید گزینه داشته باشد»", async () => {
+    const { cookie } = await registerUser(baseUrl());
+    const r = await createExam(cookie, {
+      questions: [
+        { type: "ESSAY", text: "سؤال تشریحی؟", options: [{ text: "۱" }, { text: "۲" }], correctOptionIndex: 0 },
+      ],
+    });
+    expect(r.status).toBe(400);
+    expect((r.data as unknown as { error: string }).error).toBe("سؤال تشریحی نباید گزینه داشته باشد");
+  });
+
+  test("ESSAY question with correctOptionIndex → 400", async () => {
+    const { cookie } = await registerUser(baseUrl());
+    const r = await createExam(cookie, {
+      questions: [{ type: "ESSAY", text: "سؤال تشریحی؟", correctOptionIndex: 0 }],
+    });
+    expect(r.status).toBe(400);
+  });
+
+  test("missing type → 400", async () => {
+    const { cookie } = await registerUser(baseUrl());
+    const r = await createExam(cookie, {
+      questions: [{ text: "سؤال بدون نوع؟", options: [{ text: "۱" }, { text: "۲" }], correctOptionIndex: 0 }],
+    });
+    expect(r.status).toBe(400);
+  });
+
+  test("durationMinutes=0 → 400; 300 → 400; 60 → 201", async () => {
+    const { cookie } = await registerUser(baseUrl());
+    const zero = await createExam(cookie, { durationMinutes: 0 });
+    expect(zero.status).toBe(400);
+    expect((zero.data as unknown as { error: string }).error).toBe("مدت آزمون باید بین ۱ تا ۲۴۰ دقیقه باشد");
+    const huge = await createExam(cookie, { durationMinutes: 300 });
+    expect(huge.status).toBe(400);
+    const ok = await createExam(cookie, { durationMinutes: 60, published: true });
+    expect(ok.status).toBe(201);
+  });
+
+  test("PATCH durationMinutes after attempts → 400 «نمی‌توانید زمان را بعد از اولین شرکت‌کننده تغییر دهید»", async () => {
+    const teacher = await registerUser(baseUrl());
+    const student = await registerUser(baseUrl());
+    const { data: created } = await createExam(teacher.cookie, { durationMinutes: 30, published: true });
+    const detail = await api<{
+      questions: Array<{ id: string; correctOptionId?: string }>;
+    }>(baseUrl(), `/api/v1/exams/${created.id}`, { cookie: teacher.cookie });
+    const q = detail.data.questions[0];
+
+    const attempt = await api(baseUrl(), `/api/v1/exams/${created.id}/attempts/start`, {
+      method: "POST",
+      cookie: student.cookie,
+    });
+    expect(attempt.status).toBe(201);
+    const attemptId = (attempt.data as unknown as { attemptId: string }).attemptId;
+
+    const submit = await api(baseUrl(), `/api/v1/exams/${created.id}/attempts/${attemptId}/submit`, {
+      method: "POST",
+      cookie: student.cookie,
+      json: { answers: { [q.id]: (q as { correctOptionId: string }).correctOptionId } },
+    });
+    expect(submit.status).toBe(201);
+
+    const patch = await api(baseUrl(), `/api/v1/exams/${created.id}`, {
+      method: "PATCH",
+      cookie: teacher.cookie,
+      json: { durationMinutes: 45 },
+    });
+    expect(patch.status).toBe(400);
+    expect((patch.data as unknown as { error: string }).error).toBe(
+      "نمی‌توانید زمان را بعد از اولین شرکت‌کننده تغییر دهید"
+    );
+  });
+
+  test("GET /exams/[id] returns durationMinutes + ESSAY questions shape", async () => {
+    const teacher = await registerUser(baseUrl());
+    const { data: created } = await createExam(teacher.cookie, {
+      durationMinutes: 45,
+      published: true,
+      questions: [
+        { type: "MC", text: "سؤال MC؟", options: [{ text: "۱" }, { text: "۲" }], correctOptionIndex: 0 },
+        { type: "ESSAY", text: "سؤال ESSAY؟", points: 3 },
+      ],
+    });
+    const anon = await api<{
+      durationMinutes: number | null;
+      questions: Array<{ type: string; options: unknown; correctOptionId?: string }>;
+    }>(baseUrl(), `/api/v1/exams/${created.id}`);
+    expect(anon.status).toBe(200);
+    expect(anon.data.durationMinutes).toBe(45);
+    expect(anon.data.questions[0].type).toBe("MC");
+    expect(anon.data.questions[1].type).toBe("ESSAY");
+    expect(anon.data.questions[1].options).toBeNull();
+    expect(anon.data.questions[1].correctOptionId).toBeUndefined();
   });
 });
