@@ -480,3 +480,109 @@ export interface UserProfileTeach {
   sessionRatingCount: number;
   courseCount: number;
 }
+
+// ===================== P15 — Interactive Learning =====================
+
+export type InteractiveStepType = "TEXT" | "MC" | "NUMERIC";
+
+export type StepOption = { id: string; text: string };
+
+/** A step as a student sees it — correct answers are NEVER included. */
+export type InteractiveStepStudent = {
+  id: string;
+  order: number;
+  type: InteractiveStepType;
+  content: string;
+  options: StepOption[] | null; // MC only
+  tolerance: number | null; // NUMERIC only
+  explanation: string | null; // shown after a wrong answer
+};
+
+export type InteractiveStepTeacher = InteractiveStepStudent & {
+  correctOptionId: string | null; // MC only
+  correctNumeric: number | null; // NUMERIC only
+};
+
+export type LessonSummary = {
+  id: string;
+  title: string;
+  description: string | null;
+  grade: string;
+  subject: string;
+  published: boolean;
+  estimatedMinutes: number | null;
+  stepCount: number;
+  teacher: { id: string; fullName: string; title: string | null };
+  createdAt: string;
+  updatedAt: string;
+  /** participants with any progress — populated for owner listings (mine=true) */
+  participantCount?: number;
+  /** The viewer's own progress (only when authenticated). */
+  myProgress: {
+    currentStep: number;
+    completed: boolean;
+    startedAt: string;
+    completedAt: string | null;
+  } | null;
+};
+
+export type LessonDetailTeacher = LessonSummary & {
+  isMine: true;
+  steps: InteractiveStepTeacher[];
+  /** any student progress exists → steps locked for editing (server-enforced) */
+  hasProgress: boolean;
+};
+
+export type LessonDetailStudent = LessonSummary & {
+  isMine: false;
+  steps: InteractiveStepStudent[];
+  /** my progress detail (for the player), null when not started */
+  progress: {
+    currentStep: number;
+    completed: boolean;
+    responses: Record<string, { answer: string; correct: boolean; attempts: number }>;
+  } | null;
+};
+
+export type LessonDetail = LessonDetailTeacher | LessonDetailStudent;
+
+export type AdvanceResult =
+  | {
+      // wrong answer — stay on the current step
+      correct: false;
+      explanation: string | null;
+      currentStep: number;
+      completed: false;
+    }
+  | {
+      // correct — advance (may complete)
+      correct: true;
+      explanation: string | null;
+      currentStep: number; // new current step (or unchanged when completed)
+      completed: boolean;
+      /** present only when the lesson just completed; MC/NUMERIC graded steps */
+      summary?: {
+        totalSteps: number; // graded steps (MC + NUMERIC)
+        firstTryCorrect: number;
+        totalAttempts: number;
+      };
+    };
+
+export type MyLessonProgressSummary = {
+  lesson: { id: string; title: string; grade: string; subject: string };
+  currentStep: number;
+  stepCount: number;
+  completed: boolean;
+  startedAt: string;
+  completedAt: string | null;
+};
+
+/** Compact published-lesson card on a teacher profile (GET /users/[id]). */
+export type TeacherLessonCard = {
+  id: string;
+  title: string;
+  grade: string;
+  subject: string;
+  estimatedMinutes: number | null;
+  stepCount: number;
+};

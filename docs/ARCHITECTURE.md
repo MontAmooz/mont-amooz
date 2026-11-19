@@ -43,7 +43,7 @@ src/
 ├── app/
 │   ├── api/v1/            # REST API — auth, pamphlets, reviews, merge-requests,
 │   │                      # wallet, market, teachers, slots, sessions, courses,
-│   │                      # lessons, learn, users, stats
+│   │                      # lessons(video), interactive-lessons, learn, users, stats
 │   ├── layout.tsx         # RTL، فونت وزیرمتن
 │   ├── page.tsx           # شِل SPA + دیسپچ روت‌های hash
 │   └── globals.css        # توکن‌های برند (Tailwind v4)
@@ -57,7 +57,7 @@ src/
     ├── types.ts, format.ts, diff.ts
     └── server/            # فقط سمت سرور: auth.ts (scrypt، HMAC، کوکی، بلیت)
 mini-services/classroom-service/index.ts   # socket.io :3003
-prisma/schema.prisma (18 مدل)  ·  prisma/seed.ts (دادهٔ نمایشی)
+prisma/schema.prisma (28 مدل)  ·  prisma/seed.ts (دادهٔ نمایشی)
 db/custom.db                                # دیتابیس واقعی توسعه
 public/videos, public/courses               # دارایی‌های دوره‌های نمایشی
 ```
@@ -82,6 +82,9 @@ erDiagram
     VideoCourse ||--o{ VideoLesson : contains
     User ||--o{ CourseEnrollment : buys
     CourseEnrollment ||--o{ LessonProgress : tracks
+    User ||--o{ InteractiveLesson : authors
+    InteractiveLesson ||--o{ InteractiveStep : "contains"
+    User ||--o{ InteractiveLessonProgress : learns
 
     User { string id  string email  string passwordHash  string role }
     Pamphlet { string title  string grade  string subject  string method  string forkedFromId }
@@ -94,7 +97,7 @@ erDiagram
     VideoCourse { int priceToman  string cover }
 ```
 
-۱۸ مدل Prisma؛ محتوای جزوه **Markdown در دیتابیس** است (`PamphletVersion.content`) — ADR-0007.
+۲۸ مدل Prisma؛ محتوای جزوه **Markdown در دیتابیس** است (`PamphletVersion.content`) — ADR-0007. درس‌های تعاملی (P15) هم گام‌های Markdown/KaTeX دارند (`InteractiveStep.content`)؛ پیشرفت گام‌به‌گام در `InteractiveLessonProgress` ثبت می‌شود و پاسخ‌های صحیح فقط به نویسندهٔ درس برمی‌گردند.
 
 ## 5. API
 

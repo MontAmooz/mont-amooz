@@ -2297,6 +2297,221 @@ $\\Delta G < 0$ → واکنش خودبه‌خودی. $\\Delta G > 0$ → به �
   }
   console.log(`📝 +${p13Exams.length} exams created (10 published + 2 drafts)`);
 
+  // ---------- P15: interactive lessons (TEXT / MC / NUMERIC steps) ----------
+  async function makeInteractiveLesson(opts: {
+    teacher: typeof mohammad;
+    title: string;
+    description: string;
+    grade: string;
+    subject: string;
+    estimatedMinutes: number;
+    published: boolean;
+    days: number;
+    steps: Array<
+      | { type: "TEXT"; content: string; explanation?: string }
+      | { type: "MC"; content: string; options: string[]; correct: number; explanation?: string }
+      | { type: "NUMERIC"; content: string; correct: number; tolerance?: number; explanation?: string }
+    >;
+  }) {
+    const l = await db.interactiveLesson.create({
+      data: {
+        teacherId: opts.teacher.id,
+        title: opts.title,
+        description: opts.description,
+        grade: opts.grade,
+        subject: opts.subject,
+        published: opts.published,
+        estimatedMinutes: opts.estimatedMinutes,
+        createdAt: daysAgo(opts.days),
+        updatedAt: daysAgo(opts.days),
+      },
+    });
+    let order = 0;
+    for (const s of opts.steps) {
+      await db.interactiveStep.create({
+        data: {
+          lessonId: l.id,
+          order, // 0-indexed — matches progress.currentStep
+          type: s.type,
+          content: s.content,
+          explanation: s.explanation ?? null,
+          ...(s.type === "MC"
+            ? {
+                options: JSON.stringify(
+                  s.options.map((text, i) => ({ id: `opt${order}-${i + 1}`, text }))
+                ),
+                correctOptionId: `opt${order}-${s.correct + 1}`,
+              }
+            : {}),
+          ...(s.type === "NUMERIC" ? { correctNumeric: s.correct, tolerance: s.tolerance ?? 0 } : {}),
+        },
+      });
+      order += 1;
+    }
+    return l;
+  }
+
+  const p15Lessons: Parameters<typeof makeInteractiveLesson>[0][] = [
+    {
+      teacher: mohammad,
+      title: "مشتق به‌زبان ساده — از نرخ تغییر تا شیب مماس",
+      description: "مشتق را با سرعت‌سنج خودرو شروع کنید و به قاعدهٔ توان و مشتق دوم برسید.",
+      grade: "دوازدهم", subject: "حسابان", estimatedMinutes: 18, published: true, days: 9,
+      steps: [
+        { type: "TEXT", content: "## مشتق یعنی چه؟\n\nسرعت‌سنج خودرو همان لحظه می‌گوید «الان چقدر تند می‌روی» — نه میانگین کل مسیر. مشتق دقیقاً همین است: **نرخ لحظه‌ای تغییر**.\n\nبه‌صورت رسمی:\n$$f'(x)=\\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}$$\n\nصورت کسر، **شیب خط واصل** دو نقطهٔ خیلی نزدیک روی نمودار است؛ وقتی $h$ به صفر میل کند، آن خط واصل به **خط مماس** می‌رسد و شیبش همان $f'(x)$ است." },
+        { type: "MC", content: "مشتق $f(x) = 5x^3$ کدام است؟", options: ["$15x^2$", "$5x^2$", "$15x^3$", "$8x^3$"], correct: 0, explanation: "قاعدهٔ توان: $\\frac{d}{dx}x^n = nx^{n-1}$. ضریب ۵ دست‌نخورده می‌ماند و توان ۳ می‌آید پایین: $5 \\times 3x^2 = 15x^2$." },
+        { type: "NUMERIC", content: "شیب خط مماس به $y = x^2$ در نقطهٔ $x = 3$ چند است؟", correct: 6, tolerance: 0.01, explanation: "$y' = 2x$؛ در $x=3$ داریم $2 \\times 3 = 6$." },
+        { type: "MC", content: "اگر $f'(a) = 0$ و $f''(a) > 0$ باشد، نقطهٔ $a$ چه نقشی دارد؟", options: ["ماکزیمم محلی است", "مینیمم محلی است", "نقطهٔ عطف است", "هیچ‌کدام"], correct: 1, explanation: "مشتق دوم مثبت یعنی کاسهٔ نمودار رو به بالا است؛ جایی که شیب صفر می‌شود و کاسه بالا است، **مینیمم** داریم." },
+        { type: "TEXT", content: "## جمع‌بندی\n\n- مشتق اول = شیب مماس = نرخ تغییر.\n- مشتق دوم = جهت کاسه؛ منفی → ماکزیمم، مثبت → مینیمم.\n\nدر گام بعدی‌ها با همین ابزارها مقادیر بیشینه و کمینهٔ مسائل واقعی را می‌یابیم." },
+      ],
+    },
+    {
+      teacher: mohammad,
+      title: "توان‌های گویا و رادیکال‌ها — پلی بین جزء و ریشه",
+      description: "رادیکال‌ها را به توان کسری ببینید؛ چهار گام تمرینی با جذرهای معروف.",
+      grade: "دهم", subject: "ریاضی", estimatedMinutes: 14, published: true, days: 8,
+      steps: [
+        { type: "TEXT", content: "## هر ریشه یک توان است\n\nتعریف بنیادی:\n$$a^{\\frac{m}{n}} = \\sqrt[n]{a^m}$$\n\nمثلاً $\\sqrt{a} = a^{\\frac{1}{2}}$ و $\\sqrt[3]{8} = 8^{\\frac{1}{3}}$. بعد از این تبدیل، همهٔ قواعد توان‌ها (جمع توان‌ها در ضرب، تفریق در تقسیم) روی رادیکال‌ها هم کار می‌کنند." },
+        { type: "MC", content: "$\\sqrt[3]{8}$ کدام است؟", options: ["۲", "۴", "۶", "۸"], correct: 0, explanation: "عددی می‌خواهیم که مکعبش ۸ شود: $2^3 = 8$، پس $\\sqrt[3]{8} = 2$." },
+        { type: "NUMERIC", content: "$16^{\\frac{1}{2}}$ چند است؟", correct: 4, tolerance: 0, explanation: "$16^{\\frac{1}{2}} = \\sqrt{16} = 4$." },
+        { type: "MC", content: "$a^{\\frac{1}{2}} \\cdot a^{\\frac{3}{2}}$ ساده‌شده کدام است؟", options: ["$a^2$", "$a^{\\frac{3}{2}}$", "$a^{\\frac{1}{2}}$", "$a^3$"], correct: 0, explanation: "در ضرب، توان‌ها جمع می‌شوند: $\\frac{1}{2} + \\frac{3}{2} = 2$." },
+        { type: "NUMERIC", content: "$\\sqrt{2} \\times \\sqrt{8}$ چند است؟ (عدد نهایی)", correct: 4, tolerance: 0.01, explanation: "زیر رادیکال ضرب می‌کنیم: $\\sqrt{16} = 4$. یا: $\\sqrt{2} \\cdot 2\\sqrt{2} = 2 \\times 2 = 4$." },
+      ],
+    },
+    {
+      teacher: ali,
+      title: "واریانس را با دست حساب کنید",
+      description: "از میانگین تا واریانس و انحراف معیار، روی چهار دادهٔ ساده — بدون ماشین‌حساب.",
+      grade: "یازدهم", subject: "آمار و احتمال", estimatedMinutes: 15, published: true, days: 7,
+      steps: [
+        { type: "TEXT", content: "## پراکندگی را اندازه بگیریم\n\nمیانگین فقط «مرکز» داده‌ها را می‌گوید؛ دو کلاس با میانگین ۱۶ می‌توانند یکی یکدست و یکی پراکنده باشند. **واریانس** فاصله‌ها از میانگین را می‌سنجد:\n$$\\sigma^2 = \\frac{\\sum (x_i - \\bar{x})^2}{n}$$\n\nمیانگین **مربع** فاصله‌ها — چون فاصله‌های منفی و مثبت همدیگر را خنثی نکنند." },
+        { type: "NUMERIC", content: "میانگین داده‌های ۲، ۲، ۴، ۴ چند است؟", correct: 3, tolerance: 0, explanation: "$\\frac{2+2+4+4}{4} = \\frac{12}{4} = 3$." },
+        { type: "NUMERIC", content: "واریانس همان داده‌ها (با میانگین ۳) چند است؟", correct: 1, tolerance: 0.01, explanation: "فاصله‌ها: $-1, -1, 1, 1$ → مربع‌ها: $1,1,1,1$ → میانگین: $\\frac{4}{4} = 1$." },
+        { type: "MC", content: "اگر به همهٔ داده‌ها یک عدد ثابت اضافه شود، واریانس چه می‌شود؟", options: ["ثابت می‌ماند", "به‌اندازهٔ همان عدد زیاد می‌شود", "دو برابر می‌شود", "صفر می‌شود"], correct: 0, explanation: "با جابه‌جایی همهٔ داده‌ها، میانگین هم دقیقاً همان‌قدر جابه‌جا می‌شود؛ فاصله‌ها از میانگین تغییر نمی‌کنند." },
+        { type: "TEXT", content: "## از واریانس به انحراف معیار\n\nواریانس واحد داده‌ها را مجذور می‌کند (تومان²!). جذرش بگیریم به واحد اصلی برمی‌گردیم:\n$$\\sigma = \\sqrt{\\sigma^2}$$\n\nانحراف معیار ۱ برای داده‌های این درس یعنی داده‌ها به‌طور معمول حدود ۱ واحد از میانگین فاصله دارند." },
+      ],
+    },
+    {
+      teacher: ali,
+      title: "معادلهٔ درجهٔ دوم و نقش Δ",
+      description: "Δ را حساب کنید، تعداد ریشه‌ها را پیش‌بینی کنید و خودتان ریشه‌ها را بیابید.",
+      grade: "دهم", subject: "ریاضی", estimatedMinutes: 16, published: true, days: 6,
+      steps: [
+        { type: "TEXT", content: "## Δ تعیین‌کنندهٔ سرنوشت است\n\nبرای $ax^2 + bx + c = 0$:\n$$\\Delta = b^2 - 4ac, \\qquad x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$$\n\nسه حالت:\n- $\\Delta > 0$ → دو ریشهٔ حقیقی متمایز\n- $\\Delta = 0$ → یک ریشهٔ مضاعف\n- $\\Delta < 0$ → ریشهٔ حقیقی ندارد\n\nقبل از حل، Δ را حساب کنید تا بدانید در انتظار چه چیزی باشید." },
+        { type: "MC", content: "اگر $\\Delta > 0$ باشد، معادلهٔ درجهٔ دوم…", options: ["دو ریشهٔ حقیقی متمایز دارد", "یک ریشهٔ مضاعف دارد", "ریشهٔ حقیقی ندارد", "بی‌شمار ریشه دارد"], correct: 0, explanation: "$\\sqrt{\\Delta}$ یک عدد حقیقی ناصفر است؛ پس با $\\pm$ دو مقدار متفاوت به دست می‌آید." },
+        { type: "NUMERIC", content: "Δ معادلهٔ $x^2 - 5x + 6 = 0$ چند است؟", correct: 1, tolerance: 0, explanation: "$\\Delta = 25 - 4(1)(6) = 25 - 24 = 1$." },
+        { type: "NUMERIC", content: "ریشهٔ بزرگ‌تر همان معادله چند است؟", correct: 3, tolerance: 0.01, explanation: "$x = \\frac{5 \\pm \\sqrt{1}}{2}$ → $\\frac{5+1}{2}=3$ و $\\frac{5-1}{2}=2$." },
+        { type: "MC", content: "مجموع ریشه‌های $x^2 - 7x + 10 = 0$ چند است؟ (بدون حل کامل)", options: ["۵", "۷", "۱۰", "−۷"], correct: 1, explanation: "مجموع ریشه‌ها همیشه $\\frac{-b}{a}$ است: $\\frac{7}{1} = 7$. ریشه‌ها ۲ و ۵ هستند." },
+      ],
+    },
+    {
+      teacher: zahra,
+      title: "کار و انرژی جنبشی — قضیه‌ای که همه‌جا کار می‌کند",
+      description: "از تعریف کار تا قضیهٔ کار-انرژی؛ چهار محاسبهٔ عددی کوتاه.",
+      grade: "دهم", subject: "فیزیک", estimatedMinutes: 15, published: true, days: 7,
+      steps: [
+        { type: "TEXT", content: "## کار در فیزیک ≠ زحمت!\n\nفیزیک فقط وقتی «کار» می‌بیند که نیرو مؤثر جابه‌جایی کند:\n$$W = F\\,d\\cos\\theta$$\n\n$\nK = \\tfrac{1}{2}mv^2, \\qquad W_{کل} = \\Delta K\n$\n\nقضیهٔ کار-انرژی می‌گوید: هر قدر کار کل روی جسم انجام شود، انرژی جنبشی‌اش دقیقاً همان‌قدر عوض می‌شود. بدون حل معادلهٔ حرکت!" },
+        { type: "MC", content: "کار نیرویی که عمود بر جابه‌جایی است چقدر است؟", options: ["بیشینه", "صفر", "منفی", "نصف وزن جسم"], correct: 1, explanation: "$\\cos 90^\\circ = 0$؛ مثلاً نیرویی که ساک را افقی حمل می‌کند روی ساک کار صفر انجام می‌دهد (نیروی دست عمود بر جابه‌جایی است)." },
+        { type: "NUMERIC", content: "انرژی جنبشی جسم ۲ کیلوگرمی با سرعت ۳ متر بر ثانیه چند ژول است؟", correct: 9, tolerance: 0.1, explanation: "$K = \\tfrac{1}{2} \\times 2 \\times 3^2 = 9$ ژول." },
+        { type: "MC", content: "اگر سرعت جسم دو برابر شود، انرژی جنبشی آن…", options: ["دو برابر می‌شود", "چهار برابر می‌شود", "نصف می‌شود", "ثابت می‌ماند"], correct: 1, explanation: "سرعت در توان دوم است: $v \\to 2v$ یعنی $v^2 \\to 4v^2$." },
+        { type: "NUMERIC", content: "نیرویی ۱۰ نیوتنی جسمی را ۵ متر در جهت خودش جابه‌جا می‌کند؛ کار آن چند ژول است؟", correct: 50, tolerance: 0.1, explanation: "$W = 10 \\times 5 \\times \\cos 0^\\circ = 50$ ژول." },
+      ],
+    },
+    {
+      teacher: zahra,
+      title: "مقاومت‌های سری و موازی در دو فرمول",
+      description: "دو قاعدهٔ مدار، دو محاسبهٔ عددی و یک سؤال مفهومی — کمتر از ربع ساعت.",
+      grade: "یازدهم", subject: "فیزیک", estimatedMinutes: 12, published: true, days: 5,
+      steps: [
+        { type: "TEXT", content: "## دو آرایش، دو فرمول\n\n**سری** (یک مسیر): مقاومت‌ها جمع می‌شوند\n$$R_{eq} = R_1 + R_2$$\n\n**موازی** (مسیرهای چندگانه): معکوس‌ها جمع می‌شوند\n$$\\frac{1}{R_{eq}} = \\frac{1}{R_1} + \\frac{1}{R_2}$$\n\nنکتهٔ سریع: مقاومت معادل موازی همیشه از کوچک‌ترین مقاومت هم کوچک‌تر است — مسیر اضافه یعنی رسانایی بیشتر." },
+        { type: "NUMERIC", content: "دو مقاومت ۳ و ۵ اهم در سری: مقاومت معادل چند اهم است؟", correct: 8, tolerance: 0, explanation: "سری یعنی جمع ساده: $3 + 5 = 8$." },
+        { type: "NUMERIC", content: "دو مقاومت ۶ و ۳ اهم در موازی: مقاومت معادل چند اهم است؟", correct: 2, tolerance: 0.01, explanation: "$R_{eq} = \\frac{6 \\times 3}{6 + 3} = \\frac{18}{9} = 2$ اهم." },
+        { type: "MC", content: "در آرایش موازی، کدام کمیت روی همهٔ مقاومت‌ها یکسان است؟", options: ["جریان", "ولتاژ", "مقاومت", "توان"], correct: 1, explanation: "همهٔ شاخه‌ها به دو گرهٔ مشترک وصل‌اند، پس ولتاژ دو سرشان برابر است؛ جریان بین شاخه‌ها تقسیم می‌شود." },
+      ],
+    },
+    {
+      teacher: sara,
+      title: "پیکربندی الکترونی در پنج گام",
+      description: "ترتیب پرشدن اوربیتال‌ها را بفهمید و پیکربندی سدیم و کلر را خودتان بنویسید.",
+      grade: "دهم", subject: "شیمی", estimatedMinutes: 16, published: true, days: 6,
+      steps: [
+        { type: "TEXT", content: "## نقشهٔ خانه‌های الکترون\n\nالکترون‌ها از پایین‌ترین سطح انرژی شروع به سکونت می‌کنند:\n$$1s \\; 2s \\; 2p \\; 3s \\; 3p \\; 4s \\; 3d \\cdots$$\n\nظرفیت هر نوع اوربیتال:\n- $s$ ← حداکثر **۲** الکترون\n- $p$ ← حداکثر **۶** الکترون\n- $d$ ← حداکثر **۱۰** الکترون\n\nقاعدهٔ آوفبائو: تا سطح پایین پر نشود، بالایی پر نمی‌شود (با استثناهای معروف خودش!)." },
+        { type: "MC", content: "یک زیرلایهٔ p حداکثر چند الکترون را در خود جای می‌دهد؟", options: ["۲", "۶", "۸", "۱۰"], correct: 1, explanation: "سه اوربیتال p، هر کدام حداکثر ۲ الکترون: $3 \\times 2 = 6$." },
+        { type: "MC", content: "پیکربندی الکترونی اتم خنثی با ۱۱ الکترون (سدیم) کدام است؟", options: ["$1s^2\\,2s^2\\,2p^6\\,3s^1$", "$1s^2\\,2s^2\\,2p^6\\,3p^1$", "$1s^2\\,2s^2\\,2p^7\\,3s^2$", "$1s^2\\,2s^4\\,2p^6\\,3s^3$"], correct: 0, explanation: "$11 = 2 + 2 + 6 + 1$؛ اول 1s و 2s و 2p پر می‌شوند (جمعاً ۱۰)، الکترون آخر به 3s می‌رود." },
+        { type: "NUMERIC", content: "اتم خنثی با عدد اتمی ۱۷ (کلر) چند الکترون در آخرین پوستهٔ خود دارد؟", correct: 7, tolerance: 0, explanation: "توزیع پوسته‌ای: $2, 8, 7$ — یعنی کلر یک الکترون کم دارد تا هشت‌تایی (نوبل) شود؛ برای همین به‌شدت الکترون‌خواه است." },
+        { type: "TEXT", content: "## جمع‌بندی\n\nپیکربندی = نقشهٔ سکونت الکترون‌ها. از روی آن می‌توانید بفهمید عنصر چند الکترون والانس دارد، با چه کسانی واکنش می‌دهد و حتی رنگ شعله‌اش چه می‌شود. همین ترتیب پایهٔ جدول تناوبی است." },
+      ],
+    },
+    {
+      teacher: sara,
+      title: "pH و مقیاس اسیدی-بازی",
+      description: "لگاریتم را به زبان آشپزخانه ترجمه کنید: آب لیمو، سرکه و صابون روی یک محور.",
+      grade: "یازدهم", subject: "شیمی", estimatedMinutes: 14, published: true, days: 4,
+      steps: [
+        { type: "TEXT", content: "## یک عدد برای اسیدی‌بودن\n\n$$\\mathrm{pH} = -\\log\\,[\\mathrm{H^+}]$$\n\n- pH کوچک‌تر از ۷ → اسیدی\n- pH برابر ۷ → خنثی (آب خالص در ۲۵°C)\n- pH بزرگ‌تر از ۷ → بازی\n\nچون لگاریتم است، **هر واحد pH یعنی ده برابر** شدن یا شدن غلظت $\\mathrm{H^+}$ — نه یک واحد!" },
+        { type: "MC", content: "pH محلول خنثی در دمای ۲۵ درجه چند است؟", options: ["۰", "۵", "۷", "۱۴"], correct: 2, explanation: "$[\\mathrm{H^+}] = 10^{-7}$ مولار → $\\mathrm{pH} = 7$." },
+        { type: "MC", content: "محلولی با pH=۳ نسبت به محلولی با pH=۵ چقدر اسیدی‌تر است؟", options: ["۲ برابر", "۱۰ برابر", "۱۰۰ برابر", "۲۰ برابر"], correct: 2, explanation: "دو واحد اختلاف: $10^2 = 100$ برابر غلظت $\\mathrm{H^+}$ بیشتر." },
+        { type: "NUMERIC", content: "اگر غلظت $[\\mathrm{H^+}]$ برابر $10^{-4}$ مولار باشد، pH چند است؟", correct: 4, tolerance: 0.01, explanation: "$\\mathrm{pH} = -\\log(10^{-4}) = 4$." },
+        { type: "MC", content: "کدام مادهٔ خانگی ماهیت بازی دارد؟", options: ["آب لیمو", "سرکه", "صابون", "قهوه"], correct: 2, explanation: "صابون از چربی و باز سود ساخته می‌شود و pH آن بالای ۷ است؛ بقیه اسیدی‌اند." },
+      ],
+    },
+    {
+      teacher: fateme,
+      title: "فتوسنتز: مرحلهٔ نور و چرخهٔ کالوین",
+      description: "دو ایستگاه فتوسنتز را جدا کنید و ببینید اکسیژن دقیقاً از کجا می‌آید.",
+      grade: "دهم", subject: "زیست‌شناسی", estimatedMinutes: 15, published: true, days: 5,
+      steps: [
+        { type: "TEXT", content: "## کارخانهٔ دو مرحله‌ای\n\nمعادلهٔ کل:\n$$6CO_2 + 6H_2O \\xrightarrow{\\text{نور}} C_6H_{12}O_6 + 6O_2$$\n\nاما این یک‌ضرب نیست — دو مرحلهٔ جدا:\n1. **واکنش‌های وابسته به نور** — در غشای تیلاکوئید؛ نور را می‌گیرد، آب را می‌شکند، ATP و NADPH می‌سازد.\n2. **چرخهٔ کالوین** — در استروما؛ با همان ATP و NADPH، CO₂ را به قند مبدل می‌کند." },
+        { type: "MC", content: "اکسیژن آزادشده در فتوسنتز از شکست کدام ماده به دست می‌آید؟", options: ["CO₂", "آب", "قند", "کلروفیل"], correct: 1, explanation: "آب در مرحلهٔ نور تجزیه می‌شود (فتولیز)؛ اکسیژن آن محصول کنارِ گذاشته‌شده است — همین آزمایش با اکسیژنِ برچسب‌خورده ثابت شد." },
+        { type: "MC", content: "چرخهٔ کالوین در کدام بخش کلروپلاست رخ می‌دهد؟", options: ["غشای تیلاکوئید", "استروما", "هسته", "ماتریکس میتوکندری"], correct: 1, explanation: "مرحلهٔ نور غشایی است، کالوین در مایع درون کلروپلاست یعنی استروما." },
+        { type: "NUMERIC", content: "به‌ازای هر مولکول قند در معادلهٔ کل فتوسنتز، چند مولکول CO₂ مصرف می‌شود؟", correct: 6, tolerance: 0, explanation: "ضریب جلوی $CO_2$ در معادلهٔ موازنه‌شده ۶ است." },
+        { type: "TEXT", content: "## چه چیزی سرعت کارخانه را کم می‌کند؟\n\nسه عامل محدودکنندهٔ فتوسنتز: **شدت نور**، **غلظت CO₂** و **دما** (آنزیم‌های کالوین در دمای خیلی بالا میرانند). رنگ گلبرگ محدودکننده نیست — نور را سبزبرگ‌ها می‌گیرند نه گلبرگ‌ها." },
+      ],
+    },
+    {
+      teacher: fateme,
+      title: "قوانین مندل — گام‌به‌گام با نخود فرنگی",
+      description: "از آلل غالب تا تست‌کراس؛ سه سؤال کوتاه روی تلاقی‌های کلاسیک.",
+      grade: "دوازدهم", subject: "زیست‌شناسی", estimatedMinutes: 14, published: true, days: 3,
+      steps: [
+        { type: "TEXT", content: "## زبان ژنتیک مندلی\n\n- **آلل غالب** (T) با یک نسخه هم خودش را نشان می‌دهد؛ **مغلوب** (t) فقط در حالت جفت دیده می‌شود.\n- **ژنوتیپ**: TT، Tt، tt — **فنوتیپ**: بلند، بلند، کوتاه.\n\nتلاقی $Tt \\times Tt$:\n$$TT : Tt : tt = 1 : 2 : 1 \\;\\Rightarrow\\; \\text{فنوتیپ} \\; 3:1$$" },
+        { type: "MC", content: "ژنوتیپ ناهم‌خالتی (هتروزیگوت) کدام است؟", options: ["TT", "tt", "Tt", "هر سه"], correct: 2, explanation: "«ناهم‌خالتی» یعنی دو آلل متفاوت: یک غالب + یک مغلوب." },
+        { type: "NUMERIC", content: "در تلاقی $Tt \\times Tt$ چه کسری از زاده‌ها فنوتیپ کوتاه (tt) دارند؟ (عدد اعشاری بین ۰ و ۱، مثلاً 0.25)", correct: 0.25, tolerance: 0.01, explanation: "ربع مربع‌های تابلوی پانت به tt می‌رسد: $\\frac{1}{4} = 0.25$." },
+        { type: "MC", content: "تست‌کراس یعنی تلاقی فرد مجهول با فردی که…", options: ["ناهم‌خالتی غالب است", "هم‌خالتی مغلوب است", "هم‌خالتی غالب است", "دلخواه است"], correct: 1, explanation: "فرد tt فقط آلل مغلوب می‌دهد؛ پس نسبتی که در زاده‌ها ظاهر شود، گامت‌های فرد مجهول را لو می‌دهد." },
+      ],
+    },
+    {
+      teacher: mohammad,
+      title: "کاربرد مشتق: اکسترمم‌های مطلق روی بازه",
+      description: "کاندیدهای اکسترمم مطلق را پیدا کنید و دو محاسبهٔ سریع انجام دهید.",
+      grade: "دوازدهم", subject: "حسابان", estimatedMinutes: 18, published: true, days: 2,
+      steps: [
+        { type: "TEXT", content: "## اکسترمم مطلق را چطور مطمئن یابیم؟\n\nروی بازهٔ بستهٔ $[a,b]$ تابع پیوسته حتماً ماکزیمم و مینیمم مطلق دارد. کاندیدها فقط دو گروه‌اند:\n1. نقاط بحرانی داخل بازه (که $f'(x) = 0$ یا تعریف‌ناپذیر است)\n2. دو **سر بازه**\n\nفقط مقدار $f$ را در این چند نقطه حساب کنید و بزرگ‌ترین/کوچک‌ترین را بردارید — تمام." },
+        { type: "NUMERIC", content: "تابع $f(x) = x^2 - 4x + 1$ در نقطهٔ مینیمم خود چه مقداری می‌گیرد؟", correct: -3, tolerance: 0.01, explanation: "$f'(x) = 2x - 4 = 0 \\Rightarrow x = 2$؛ $f(2) = 4 - 8 + 1 = -3$." },
+        { type: "MC", content: "تابع $f(x) = x^3$ روی بازهٔ $[-1, 1]$ اکسترمم مطلق کجا دارد؟", options: ["فقط ماکزیمم در x=0", "فقط مینیمم در x=0", "هر دو در سرهای بازه (x=±1)", "هیچ‌کدام چون یکنواست"], correct: 2, explanation: "تابع صعودی است، پس مینیمم مطلق در $x=-1$ (مقدار $-1$) و ماکزیمم مطلق در $x=1$ (مقدار $1$) — هر دو سر بازه. نکته: $f'(0)=0$ ولی نقطهٔ عطف است، نه اکسترمم!" },
+        { type: "NUMERIC", content: "شیب خط مماس به $f(x) = x^3$ در نقطهٔ $x = 1$ چند است؟", correct: 3, tolerance: 0.01, explanation: "$f'(x) = 3x^2$؛ در $x=1$: $3$." },
+      ],
+    },
+    {
+      teacher: zahra,
+      title: "توان و بازدهی — وات را حساب کنید",
+      description: "توان یعنی سرعت انجام کار؛ سه محاسبهٔ کوتاه و یک بازده واقعی.",
+      grade: "دهم", subject: "فیزیک", estimatedMinutes: 12, published: true, days: 2,
+      steps: [
+        { type: "TEXT", content: "## نه فقط چقدر، بلکه چقدر سریع\n\nدو ماشین می‌توانند یک جابه‌جایی یکسان را انجام دهند؛ تندتر بودن یعنی **توان** بیشتر:\n$$P = \\frac{W}{t}$$\n\nواحد: وات (ژول بر ثانیه). برای هر دستگاه واقعی هم بازده را داریم:\n$$\\eta = \\frac{P_{مفید}}{P_{کل}} \\times 100\\,\\%$$\n\nباقی توان معمولاً به گرما (و صدا!) تبدیل می‌شود." },
+        { type: "NUMERIC", content: "دستگاهی ۱۰۰۰ ژول کار را در ۲۰ ثانیه انجام می‌دهد؛ توان آن چند وات است؟", correct: 50, tolerance: 0.1, explanation: "$P = \\frac{1000}{20} = 50$ وات." },
+        { type: "MC", content: "دستگاه ۱۰۰ واتی در ۱۰ ثانیه چند ژول کار انجام می‌دهد؟", options: ["۱۰", "۱۰۰", "۱۰۰۰", "۱۰۰۰۰"], correct: 2, explanation: "$W = P \\times t = 100 \\times 10 = 1000$ ژول." },
+        { type: "NUMERIC", content: "موتوری با توان کل ۵۰۰ وات، توان مفید ۴۰۰ وات دارد؛ بازده آن چند درصد است؟", correct: 80, tolerance: 0.5, explanation: "$\\eta = \\frac{400}{500} \\times 100 = 80\\,\\%$؛ ۱۰۰ وات باقی‌مانده به گرما و اصطکاک می‌رود." },
+      ],
+    },
+  ];
+  for (const l of p15Lessons) {
+    await makeInteractiveLesson(l);
+  }
+  console.log(
+    `🧩 +${p15Lessons.length} interactive lessons created (${await db.interactiveStep.count()} steps)`
+  );
+
   // ---------- course expansion (10 more) ----------
   const p13Courses: Parameters<typeof makeCourse>[0][] = [
     {
@@ -2606,6 +2821,8 @@ $\\Delta G < 0$ → واکنش خودبه‌خودی. $\\Delta G > 0$ → به �
     reviews: await db.review.count(),
     mrs: await db.mergeRequest.count(),
     exams: await db.exam.count(),
+    interactiveLessons: await db.interactiveLesson.count(),
+    interactiveSteps: await db.interactiveStep.count(),
     openSlots: await db.teacherSlot.count({ where: { status: "OPEN", startAt: { gt: new Date() } } }),
     sessions: await db.classSession.count(),
     courses: await db.videoCourse.count(),

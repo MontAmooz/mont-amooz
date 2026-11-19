@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/client";
 import { faDate, faNumber, faRating, faToman } from "@/lib/format";
-import type { CourseCard, ExamSummary, PublicUser, UserProfile, UserProfileTeach } from "@/lib/types";
+import type { CourseCard, ExamSummary, PublicUser, TeacherLessonCard, UserProfile, UserProfileTeach } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CourseCover, EmptyBox, ErrorBox, InitialsAvatar, PageSkeleton, Spinner } from "./bits";
 import { useFetch } from "./hooks";
@@ -29,11 +29,12 @@ import { navigate } from "./router";
 import { PamphletCard } from "./pamphlet-card";
 import { useEduStore } from "./store";
 
-/** GET /users/[id] extended with Phase-2 teach + courses + P12 exams blocks. */
+/** GET /users/[id] extended with Phase-2 teach + courses + P12 exams + P15 lessons blocks. */
 interface ProfileWithMarket extends UserProfile {
   teach?: UserProfileTeach;
   courses?: CourseCard[];
   exams?: ExamSummary[];
+  lessons?: TeacherLessonCard[];
 }
 
 /** P10 — user-initiated password change (knows the current password). */
@@ -265,7 +266,7 @@ export function ProfileView({ id, isMe }: { id: string; isMe?: boolean }) {
     );
   }
 
-  const { user, pamphlets, stats, teach, courses, exams } = profile.data;
+  const { user, pamphlets, stats, teach, courses, exams, lessons } = profile.data;
   const firstName = user.fullName.split(/\s+/)[0];
   const hasTeach =
     !!teach && (teach.openSlots > 0 || teach.completedSessions > 0 || teach.courseCount > 0);
@@ -459,6 +460,34 @@ export function ProfileView({ id, isMe }: { id: string; isMe?: boolean }) {
                     <span className="oeg-mono font-black text-gray-600">
                       میانگین {faNumber(Math.round(e.avgScore))}٪
                     </span>
+                  )}
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* P15 — published interactive lessons (teacher profiles) */}
+      {lessons && lessons.length > 0 && (
+        <section className="mt-10" aria-label="درس‌های تعاملی این دبیر">
+          <h2 className="text-xl font-black md:text-2xl">
+            درس‌های تعاملی {isMe ? "شما" : firstName}
+          </h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {lessons.map((l) => (
+              <a
+                key={l.id}
+                href={`#/lesson/${l.id}`}
+                className="block border-2 border-ink bg-white p-4 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--color-ink)]"
+              >
+                <h3 className="text-sm font-black leading-7">{l.title}</h3>
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                  <span>{l.grade}</span>
+                  <span>{l.subject}</span>
+                  <span className="oeg-mono">{faNumber(l.stepCount)} گام</span>
+                  {l.estimatedMinutes && (
+                    <span className="oeg-mono">~{faNumber(l.estimatedMinutes)} دقیقه</span>
                   )}
                 </div>
               </a>

@@ -4,6 +4,7 @@
 // برنامهٔ تدریس (slot create/delete), دوره‌ها (my courses + management + create wizard).
 
 import {
+  BookOpenCheck,
   CalendarClock,
   CalendarDays,
   CheckCheck,
@@ -79,6 +80,7 @@ import type {
   CourseCard,
   CourseDetail,
   ExamSummary,
+  LessonSummary,
   MySlotItem,
   SessionItem,
   UserProfileTeach,
@@ -1593,7 +1595,7 @@ export default function TeachView() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="mt-8">
-        <TabsList className="h-11 w-full grid-cols-4 sm:w-fit">
+        <TabsList className="h-11 w-full grid-cols-5 sm:w-fit">
           <TabsTrigger value="classes" className="gap-1.5 px-4 font-bold">
             <CalendarClock className="size-4" aria-hidden="true" /> کلاس‌ها
           </TabsTrigger>
@@ -1605,6 +1607,9 @@ export default function TeachView() {
           </TabsTrigger>
           <TabsTrigger value="exams" className="gap-1.5 px-4 font-bold">
             <ClipboardList className="size-4" aria-hidden="true" /> آزمون‌ها
+          </TabsTrigger>
+          <TabsTrigger value="lessons" className="gap-1.5 px-4 font-bold">
+            <BookOpenCheck className="size-4" aria-hidden="true" /> درس‌های تعاملی
           </TabsTrigger>
         </TabsList>
         <TabsContent value="classes" className="mt-6">
@@ -1618,6 +1623,9 @@ export default function TeachView() {
         </TabsContent>
         <TabsContent value="exams" className="mt-6">
           <ExamsTab />
+        </TabsContent>
+        <TabsContent value="lessons" className="mt-6">
+          <LessonsTab />
         </TabsContent>
       </Tabs>
 
@@ -1693,6 +1701,114 @@ function ExamsTab() {
                   </span>
                 )}
               </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// ===================== P15 — interactive lessons tab =====================
+
+function LessonsTab() {
+  const { toast } = useToast();
+  const list = useFetch<{ items: LessonSummary[]; total: number }>(
+    () => api("/interactive-lessons?mine=true&pageSize=48"),
+    []
+  );
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const items = list.data?.items ?? [];
+
+  async function togglePublish(l: LessonSummary) {
+    setBusyId(l.id);
+    try {
+      await api(`/interactive-lessons/${l.id}`, {
+        method: "PATCH",
+        json: { published: !l.published },
+      });
+      toast({
+        title: l.published ? "درس از حالت انتشار خارج شد" : "درس منتشر شد",
+      });
+      list.retry();
+    } catch (err) {
+      toast({
+        title: "تغییر وضعیت ناموفق بود",
+        description: err instanceof Error ? err.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-xl text-sm leading-7 text-gray-500">
+          درس‌های گام‌به‌گام بسازید: متن توضیحی، چندگزینه‌ای و پاسخ عددی — دانش‌آموز فقط با پاسخ درست جلو می‌رود.
+        </p>
+        <Button
+          onClick={() => navigate("#/lesson/new")}
+          className="h-11 border-2 border-ink font-black md:h-10"
+        >
+          <Plus className="size-4" aria-hidden="true" /> ساخت درس جدید
+        </Button>
+      </div>
+
+      {list.loading && !list.data ? (
+        <div className="mt-6" aria-busy="true">
+          <PageSkeleton />
+        </div>
+      ) : list.error ? (
+        <div className="mt-6">
+          <ErrorBox message={list.error} onRetry={list.retry} />
+        </div>
+      ) : items.length === 0 ? (
+        <div className="mt-6">
+          <EmptyBox
+            title="هنوز درس تعاملی نساخته‌اید"
+            description="اولین درس گام‌به‌گام خود را بسازید تا دانش‌آموزان یادگیری را شروع کنند."
+          />
+        </div>
+      ) : (
+        <ul className="mt-6 divide-y divide-gray-100 border-2 border-ink bg-white">
+          {items.map((l) => (
+            <li key={l.id}>
+              <div className="flex flex-wrap items-center gap-3 p-4">
+                <BookOpenCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                <a
+                  href={`#/lesson/${l.id}`}
+                  className="min-w-0 flex-1 text-sm font-bold hover:text-primary"
+                >
+                  {l.title}
+                </a>
+                {!l.published && (
+                  <Badge variant="outline" className="border-2 border-gold px-1.5 text-xs font-bold text-[#8a6a24]">
+                    پیش‌نویس
+                  </Badge>
+                )}
+                <span className="oeg-mono text-xs text-gray-500">{faNumber(l.stepCount)} گام</span>
+                <span className="oeg-mono text-xs text-gray-500">
+                  {faNumber(l.participantCount ?? 0)} شرکت‌کننده
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void togglePublish(l)}
+                  disabled={busyId === l.id}
+                  className={cn(
+                    "h-8 border-2 font-bold",
+                    l.published
+                      ? "border-gold text-[#8a6a24] hover:bg-gold/10"
+                      : "border-ink"
+                  )}
+                >
+                  {busyId === l.id ? <Spinner /> : null}
+                  {l.published ? "لغو انتشار" : "انتشار"}
+                </Button>
+              </div>
             </li>
           ))}
         </ul>

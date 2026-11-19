@@ -12,7 +12,8 @@ export type NotificationType =
   | "SESSION_COMPLETED"
   | "COURSE_PURCHASED"
   | "EXAM_COMPLETED"
-  | "EXAM_GRADED";
+  | "EXAM_GRADED"
+  | "LESSON_COMPLETED";
 
 export type NotifyInput = {
   userId: string; // recipient
@@ -22,7 +23,7 @@ export type NotifyInput = {
   body?: string; // Persian, optional (~200 chars)
   linkUrl?: string; // client hash URL, e.g. "#/pamphlet/abc"
   relatedId?: string;
-  relatedType?: "pamphlet" | "mr" | "session" | "course" | "exam";
+  relatedType?: "pamphlet" | "mr" | "session" | "course" | "exam" | "interactive-lesson";
 };
 
 export async function notify(input: NotifyInput): Promise<void> {
