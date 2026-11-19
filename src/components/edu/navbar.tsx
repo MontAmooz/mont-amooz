@@ -5,6 +5,7 @@
 import { useState } from "react";
 import {
   BookOpen,
+  BookOpenCheck,
   ClipboardList,
   GitMerge,
   GraduationCap,
@@ -177,6 +178,12 @@ export function Navbar() {
             <ClipboardList className="size-4" aria-hidden="true" /> آزمون‌ها
           </NavLink>
           <NavLink
+            hash="#/lessons"
+            active={route.name === "lessons" || route.name === "lesson" || route.name === "lesson-new" || route.name === "lesson-edit"}
+          >
+            <BookOpenCheck className="size-4" aria-hidden="true" /> درس تعاملی
+          </NavLink>
+          <NavLink
             hash="#/requests"
             active={route.name === "requests" || route.name === "request"}
           >
@@ -250,6 +257,14 @@ export function Navbar() {
                     onClick={() => navigate("#/exams?mine=true")}
                   >
                     <ClipboardList className="size-4" aria-hidden="true" /> آزمون‌های من
+                  </DropdownMenuItem>
+                )}
+                {user.role === "معلم" && (
+                  <DropdownMenuItem
+                    className="h-11 cursor-pointer gap-2 font-bold"
+                    onClick={() => navigate("#/lessons?mine=true")}
+                  >
+                    <BookOpenCheck className="size-4" aria-hidden="true" /> درس‌های من
                   </DropdownMenuItem>
                 )}
                 {user.isAdmin && (
@@ -354,6 +369,13 @@ export function Navbar() {
               className="flex h-11 items-center gap-3 border-2 border-transparent px-3 font-bold hover:border-gray-200"
             >
               <ClipboardList className="size-5 text-primary" aria-hidden="true" /> آزمون‌ها
+            </a>
+            <a
+              href="#/lessons"
+              onClick={() => setMobileOpen(false)}
+              className="flex h-11 items-center gap-3 border-2 border-transparent px-3 font-bold hover:border-gray-200"
+            >
+              <BookOpenCheck className="size-5 text-primary" aria-hidden="true" /> درس تعاملی
             </a>
             <a
               href="#/requests"

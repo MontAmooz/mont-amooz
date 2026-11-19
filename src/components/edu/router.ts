@@ -58,7 +58,12 @@ export type Route =
   | { name: "exam-edit"; id: string }
   | { name: "exam"; id: string }
   | { name: "exam-result"; id: string; attemptId: string }
-  | { name: "exam-grade"; id: string; attemptId: string };
+  | { name: "exam-grade"; id: string; attemptId: string }
+  // P15 — interactive learning
+  | { name: "lessons"; mine: boolean }
+  | { name: "lesson-new" }
+  | { name: "lesson-edit"; id: string }
+  | { name: "lesson"; id: string };
 
 const HOME: Route = { name: "home", params: {} };
 
@@ -123,6 +128,12 @@ export function parseHash(hash: string): Route {
   if (head === "exam" && id && extra === "edit") return { name: "exam-edit", id };
   if (head === "exam" && id === "new") return { name: "exam-new" };
   if (head === "exam" && id) return { name: "exam", id };
+  // P15 — interactive lessons: #/lesson/new | #/lesson/{id} | #/lesson/{id}/edit
+  if (head === "lesson" && !id) return { name: "lessons", mine: false };
+  if (head === "lessons") return { name: "lessons", mine: query.get("mine") === "true" };
+  if (head === "lesson" && id && extra === "edit") return { name: "lesson-edit", id };
+  if (head === "lesson" && id === "new") return { name: "lesson-new" };
+  if (head === "lesson" && id) return { name: "lesson", id };
   switch (head) {
     case "pamphlet":
       return id ? { name: "pamphlet", id } : HOME;
@@ -162,6 +173,14 @@ export function parseHash(hash: string): Route {
       return { name: "notifications" };
     case "exams":
       return { name: "exams", mine: false };
+    case "lessons":
+      return { name: "lessons", mine: false };
+    case "lesson":
+      return { name: "lesson", id: id ?? "" };
+    case "lesson-new":
+      return { name: "lesson-new" };
+    case "lesson-edit":
+      return id ? { name: "lesson-edit", id } : { name: "lessons", mine: true };
     case "exam":
       return { name: "exam", id: id ?? "" };
     case "exam-new":

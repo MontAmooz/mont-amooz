@@ -22,6 +22,9 @@ import { SiteFooter } from "@/components/edu/footer";
 import { HomeView } from "@/components/edu/home-view";
 import LearnPlayerView from "@/components/edu/learn-player-view";
 import LearnView from "@/components/edu/learn-view";
+import { LessonCreateView } from "@/components/edu/lesson-create-view";
+import { LessonPlayerView } from "@/components/edu/lesson-player-view";
+import { LessonsView } from "@/components/edu/lessons-view";
 import MarketView from "@/components/edu/market-view";
 import { Navbar } from "@/components/edu/navbar";
 import { NotificationBell } from "@/components/edu/notification-bell";
@@ -221,6 +224,35 @@ export default function Page() {
             />
           </div>
         );
+      // ----- P15 — interactive learning -----
+      case "lessons":
+        return <LessonsView mine={route.mine} />;
+      case "lesson-new":
+        if (!sessionLoaded) return null;
+        return user ? (
+          <LessonCreateView />
+        ) : (
+          <div className="mx-auto max-w-7xl px-4 py-16">
+            <AuthRequiredBox
+              title="برای ساخت درس تعاملی وارد حساب کاربری شوید"
+              hint="ساخت درس تعاملی مخصوص حساب‌های معلم است."
+            />
+          </div>
+        );
+      case "lesson-edit":
+        if (!sessionLoaded) return null;
+        return user ? (
+          <LessonCreateView key={route.id} editId={route.id} />
+        ) : (
+          <div className="mx-auto max-w-7xl px-4 py-16">
+            <AuthRequiredBox
+              title="برای ویرایش درس وارد حساب کاربری شوید"
+              hint="فقط نویسندهٔ درس می‌تواند ویرایش کند."
+            />
+          </div>
+        );
+      case "lesson":
+        return <LessonPlayerView key={route.id} id={route.id} />;
       default:
         return <HomeView params={{}} />;
     }

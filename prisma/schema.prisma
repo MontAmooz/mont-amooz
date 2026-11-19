@@ -52,6 +52,10 @@ model User {
   enrollments       CourseEnrollment[] @relation("Enrollments")
   courseReviews     CourseReview[]     @relation("GivenCourseReviews")
   lessonProgress    LessonProgress[]
+
+  // P15 — interactive lessons
+  authoredLessons           InteractiveLesson[]         @relation("AuthoredLessons")
+  interactiveLessonProgress InteractiveLessonProgress[] @relation("UserLessonProgress")
 }
 
 model Pamphlet {
@@ -490,4 +494,74 @@ model ExamAttempt {
   @@index([studentId])
   @@index([examId])
   @@index([status])
+}
+
+// ===================== P15 — Interactive Learning =====================
+
+// Brilliant-style step lesson (P15 MVP). Steps are TEXT (markdown, rendered
+// with the shared MarkdownViewer), MC (2-4 options, 1 correct) or NUMERIC
+// (numeric answer + optional tolerance). Students advance only on a correct
+// answer; wrong answers show the step's explanation and allow a retry.
+model InteractiveLesson {
+  id               String   @id @default(cuid())
+  teacherId        String
+  title            String
+  description      String?
+  grade            String
+  subject          String
+  published        Boolean  @default(false)
+  estimatedMinutes Int? // rough estimate, shown to student
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  teacher  User                        @relation("AuthoredLessons", fields: [teacherId], references: [id])
+  steps    InteractiveStep[]
+  progress InteractiveLessonProgress[]
+
+  @@index([published, grade, subject])
+  @@index([teacherId])
+}
+
+// One step of an interactive lesson. type="MC" carries options JSON +
+// correctOptionId; type="NUMERIC" carries correctNumeric + tolerance;
+// type="TEXT" is read-only content (no answer to grade).
+model InteractiveStep {
+  id              String   @id @default(cuid())
+  lessonId        String
+  order           Int // 0-indexed, matches progress.currentStep
+  type            String // "TEXT" | "MC" | "NUMERIC"
+  content         String // TEXT: markdown; MC/NUMERIC: question text (markdown)
+  options         String? // MC only: JSON array [{ id, text }]
+  correctOptionId String? // MC only
+  correctNumeric  Float? // NUMERIC only
+  tolerance       Float? // NUMERIC only, default 0
+  explanation     String? // shown on wrong answer; may contain markdown
+  createdAt       DateTime @default(now())
+
+  lesson InteractiveLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, order])
+  @@index([lessonId])
+}
+
+// One row per student per lesson. Renamed from the prompt's "LessonProgress"
+// because that name is taken by the VideoCourse watch-progress model —
+// this is the P15 approved adaptation (user decision, 2026-11-19).
+model InteractiveLessonProgress {
+  id          String    @id @default(cuid())
+  lessonId    String
+  userId      String
+  currentStep Int       @default(0) // index into the lesson's ordered steps
+  completed   Boolean   @default(false)
+  responses   String    @default("{}") // JSON: { [stepId]: { answer, correct, attempts } }
+  startedAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  lesson InteractiveLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user   User              @relation("UserLessonProgress", fields: [userId], references: [id])
+
+  @@unique([lessonId, userId])
+  @@index([userId])
+  @@index([completedAt])
 }

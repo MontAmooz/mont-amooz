@@ -40,6 +40,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     sessionReviews,
     courseRows,
     examRows,
+    lessonRows,
   ] = await Promise.all([
     db.pamphlet.findMany({
       where: { authorId: id },
@@ -70,6 +71,19 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         teacher: { select: { id: true, fullName: true, title: true } },
         _count: { select: { questions: true, attempts: true } },
         attempts: { select: { score: true, maxScore: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    // P15 — published interactive lessons for the profile page
+    db.interactiveLesson.findMany({
+      where: { teacherId: id, published: true },
+      select: {
+        id: true,
+        title: true,
+        grade: true,
+        subject: true,
+        estimatedMinutes: true,
+        _count: { select: { steps: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -104,5 +118,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     teach,
     courses: courseRows.map(toCourseCard),
     exams: examRows.map(toExamSummary),
+    lessons: lessonRows.map((l) => ({
+      id: l.id,
+      title: l.title,
+      grade: l.grade,
+      subject: l.subject,
+      estimatedMinutes: l.estimatedMinutes,
+      stepCount: l._count.steps,
+    })),
   });
 }

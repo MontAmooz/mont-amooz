@@ -51,6 +51,7 @@ import {
 } from "@/lib/constants";
 import { faNumber, faRating, toFaDigits } from "@/lib/format";
 import type {
+  LessonSummary,
   PamphletListResponse,
   PlatformStats,
   TopTeacher,
@@ -612,6 +613,9 @@ export function HomeView({ params }: { params: HomeParams }) {
         </div>
       </section>
 
+      {/* ---------- P15 — interactive lessons band ---------- */}
+      <LessonsBand />
+
       {/* ---------- how it works ---------- */}
       <section id="how-it-works" className="border-y-2 border-ink bg-gray-50 scroll-mt-20" aria-label="چطور کار می‌کند">
         <div className="mx-auto max-w-7xl px-4 py-10 md:py-14">
@@ -728,5 +732,71 @@ export function HomeView({ params }: { params: HomeParams }) {
         </SheetContent>
       </Sheet>
     </div>
+  );
+}
+
+// ===================== P15 — interactive lessons band =====================
+
+function LessonsBand() {
+  const list = useFetch<{ items: LessonSummary[]; total: number }>(
+    () => api("/interactive-lessons?pageSize=6"),
+    []
+  );
+  const items = list.data?.items ?? [];
+  // silent on error/empty — the band is promotional, never load-bearing
+  if (list.error || items.length === 0) return null;
+
+  return (
+    <section className="border-b-2 border-ink bg-white" aria-label="درس‌های تعاملی">
+      <div className="mx-auto max-w-7xl px-4 py-10 md:py-12">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="oeg-mono text-sm font-bold text-primary">جدید | یادگیری گام‌به‌گام</p>
+            <h2 className="mt-2 text-2xl font-black md:text-3xl">درس‌های تعاملی</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-gray-600">
+              بخوان، پاسخ بده، جلو برو — درس‌های کوتاهی که مثل تمرینِ حل‌مسئله پیش می‌روند.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate("#/lessons")}
+            className="h-11 border-2 border-ink font-bold md:h-10"
+          >
+            مشاهدهٔ همه ({faNumber(list.data?.total ?? items.length)})
+          </Button>
+        </div>
+        <div className="oeg-scroll mt-6 flex gap-4 overflow-x-auto pb-2">
+          {items.map((l) => (
+            <a
+              key={l.id}
+              href={`#/lesson/${l.id}`}
+              className="flex w-72 shrink-0 flex-col border-2 border-ink bg-white p-4 transition-all duration-150 hover:-translate-y-1 hover:shadow-[5px_5px_0_0_#111827] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <h3 className="line-clamp-2 min-h-11 font-black leading-6">{l.title}</h3>
+              <p className="mt-1 text-xs font-bold text-primary">{l.teacher.fullName}</p>
+              <div className="mt-3 flex flex-wrap gap-1 text-[11px] font-bold text-gray-600">
+                <span className="border-2 border-gray-200 px-1.5 py-0.5">{l.grade}</span>
+                <span className="border-2 border-gray-200 px-1.5 py-0.5">{l.subject}</span>
+                {l.estimatedMinutes && (
+                  <span className="border-2 border-gray-200 px-1.5 py-0.5">~{faNumber(l.estimatedMinutes)} دقیقه</span>
+                )}
+              </div>
+              <div className="mt-4 flex items-center justify-between border-t-2 border-gray-100 pt-3 text-xs text-gray-600">
+                <span className="oeg-mono font-bold">{faNumber(l.stepCount)} گام</span>
+                {l.myProgress?.completed ? (
+                  <span className="font-black text-success">تکمیل شده ✓</span>
+                ) : l.myProgress ? (
+                  <span className="oeg-mono font-bold text-gold">
+                    {faNumber(l.myProgress.currentStep)} از {faNumber(l.stepCount)}
+                  </span>
+                ) : (
+                  <span className="font-bold text-gray-400">شروع نکرده</span>
+                )}
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

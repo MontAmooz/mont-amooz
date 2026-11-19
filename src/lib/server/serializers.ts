@@ -10,6 +10,9 @@ import type {
   ExamQuestionStudent,
   ExamQuestionTeacher,
   ExamSummary,
+  InteractiveStepStudent,
+  InteractiveStepTeacher,
+  InteractiveStepType,
   LessonItem,
   MergeRequestItem,
   MRStatus,
@@ -20,6 +23,7 @@ import type {
   SessionMessageItem,
   SessionReviewItem,
   SlotItem,
+  StepOption,
   TxnItem,
   TxnStatus,
   TxnType,
@@ -566,6 +570,140 @@ export function parseExamQuestions(
     }
     const options: ExamOption[] = optionTexts.map((t) => ({ id: crypto.randomUUID(), text: t }));
     out.push({ text, type: "MC", options, correctOptionId: options[correctIndex].id, points });
+  }
+  return out;
+}
+
+// ===================== P15 — Interactive Learning =====================
+
+export type InteractiveStepRow = {
+  id: string;
+  order: number;
+  type: string; // "TEXT" | "MC" | "NUMERIC"
+  content: string;
+  options: string | null; // JSON [{id, text}] — MC only
+  correctOptionId: string | null;
+  correctNumeric: number | null;
+  tolerance: number | null;
+  explanation: string | null;
+};
+
+/** Map a step row to the teacher shape (includes the correct answers). */
+export function toInteractiveStepTeacher(row: InteractiveStepRow): InteractiveStepTeacher {
+  return {
+    id: row.id,
+    order: row.order,
+    type: (row.type as InteractiveStepType) ?? "TEXT",
+    content: row.content,
+    options: row.type === "MC" ? examQuestionOptions(row) : null,
+    tolerance: row.tolerance,
+    explanation: row.explanation,
+    correctOptionId: row.correctOptionId,
+    correctNumeric: row.correctNumeric,
+  };
+}
+
+/** Map a step row to the student shape — correctOptionId/correctNumeric stripped. */
+export function toInteractiveStepStudent(row: InteractiveStepRow): InteractiveStepStudent {
+  return {
+    id: row.id,
+    order: row.order,
+    type: (row.type as InteractiveStepType) ?? "TEXT",
+    content: row.content,
+    options: row.type === "MC" ? examQuestionOptions(row) : null,
+    tolerance: row.tolerance,
+    explanation: row.explanation,
+  };
+}
+
+export type ParsedLessonStep = {
+  type: "TEXT" | "MC" | "NUMERIC";
+  content: string;
+  options: StepOption[] | null; // MC only
+  correctOptionId: string | null;
+  correctNumeric: number | null;
+  tolerance: number | null;
+  explanation: string | null;
+};
+
+/** Validate an interactive-lesson steps payload → normalized rows, or a Persian error.
+ * Client sends correctOptionIndex for MC; option ids are generated server-side. */
+export function parseInteractiveSteps(raw: unknown): ParsedLessonStep[] | string {
+  if (!Array.isArray(raw) || raw.length < 2 || raw.length > 40) {
+    return "درس باید بین ۲ تا ۴۰ گام داشته باشد";
+  }
+
+  const out: ParsedLessonStep[] = [];
+  for (const s of raw) {
+    if (!s || typeof s !== "object") return "داده‌های گام نامعتبر است";
+    const item = s as Record<string, unknown>;
+    const content = typeof item.content === "string" ? item.content.trim() : "";
+    if (content.length < 2 || content.length > 5000) {
+      return "متن گام باید بین ۲ تا ۵۰۰۰ نویسه باشد";
+    }
+    let explanation: string | null = null;
+    if (item.explanation !== undefined && item.explanation !== null) {
+      if (typeof item.explanation !== "string") return "داده‌های گام نامعتبر است";
+      const e = item.explanation.trim();
+      if (e.length > 2000) return "توضیح گام حداکثر ۲۰۰۰ نویسه است";
+      explanation = e || null;
+    }
+
+    if (item.type === "TEXT") {
+      out.push({ type: "TEXT", content, options: null, correctOptionId: null, correctNumeric: null, tolerance: null, explanation });
+      continue;
+    }
+
+    if (item.type === "MC") {
+      if (!Array.isArray(item.options)) return "هر گام چندگزینه‌ای باید بین ۲ تا ۴ گزینه داشته باشد";
+      const optionTexts: string[] = [];
+      for (const o of item.options) {
+        const t =
+          typeof o === "object" && o !== null && typeof (o as Record<string, unknown>).text === "string"
+            ? ((o as Record<string, unknown>).text as string).trim()
+            : "";
+        if (t.length < 1 || t.length > 200) return "متن هر گزینه باید بین ۱ تا ۲۰۰ نویسه باشد";
+        optionTexts.push(t);
+      }
+      if (optionTexts.length < 2 || optionTexts.length > 4) {
+        return "هر گام چندگزینه‌ای باید بین ۲ تا ۴ گزینه داشته باشد";
+      }
+      const correctIndex = item.correctOptionIndex;
+      if (
+        typeof correctIndex !== "number" ||
+        !Number.isInteger(correctIndex) ||
+        correctIndex < 0 ||
+        correctIndex >= optionTexts.length
+      ) {
+        return "گزینهٔ صحیح نامعتبر است";
+      }
+      const options: StepOption[] = optionTexts.map((t) => ({ id: crypto.randomUUID(), text: t }));
+      out.push({
+        type: "MC", content, options, correctOptionId: options[correctIndex].id,
+        correctNumeric: null, tolerance: null, explanation,
+      });
+      continue;
+    }
+
+    if (item.type === "NUMERIC") {
+      if (typeof item.correctNumeric !== "number" || !Number.isFinite(item.correctNumeric)) {
+        return "پاسخ صحیح عددی معتبر نیست";
+      }
+      let tolerance: number | null = null;
+      if (item.tolerance !== undefined && item.tolerance !== null) {
+        if (typeof item.tolerance !== "number" || !Number.isFinite(item.tolerance) || item.tolerance < 0) {
+          return "تلورانس نمی‌تواند منفی باشد";
+        }
+        tolerance = item.tolerance;
+      }
+      out.push({
+        type: "NUMERIC", content, options: null, correctOptionId: null,
+        correctNumeric: item.correctNumeric, tolerance, explanation,
+      });
+      continue;
+    }
+
+    return "نوع گام باید «متن»، «چندگزینه‌ای» یا «عددی» باشد";
   }
   return out;
 }
