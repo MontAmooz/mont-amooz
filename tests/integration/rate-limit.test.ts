@@ -18,11 +18,11 @@ function attempt(path: string, ip: string, json: unknown) {
   });
 }
 
-describe("Rate limiting — login 10/h per IP", () => {
-  test("11 rapid failed logins from one IP → 429 with Persian message + Retry-After", async () => {
+describe("Rate limiting — login 20/h per IP", () => {
+  test("21 rapid failed logins from one IP → 429 with Persian message + Retry-After", async () => {
     let sawLimit = false;
     let lastStatus = 0;
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < 21; i++) {
       const r = await attempt(
         "/api/v1/auth/login",
         BUCKET_A,
@@ -64,11 +64,11 @@ describe("Rate limiting — login 10/h per IP", () => {
   });
 });
 
-describe("Rate limiting — register 3/h per IP", () => {
-  test("4 rapid registers from one IP → 429", async () => {
+describe("Rate limiting — register 10/h per IP", () => {
+  test("11 rapid registers from one IP → 429", async () => {
     const ip = "10.78.0.1";
     const results: number[] = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 11; i++) {
       const r = await attempt("/api/v1/auth/register", ip, {
         email: `rl-reg-${Date.now()}-${i}@example.com`,
         password: "test-password-1234",
@@ -76,6 +76,7 @@ describe("Rate limiting — register 3/h per IP", () => {
       });
       results.push(r.status);
     }
-    expect(results).toEqual([201, 201, 201, 429]);
+    expect(results.filter((r) => r === 201).length).toBe(10);
+    expect(results[10]).toBe(429);
   });
 });

@@ -39,6 +39,11 @@ async function main() {
     db.rateLimitAttempt.deleteMany(),
     db.txn.deleteMany(),
     db.wallet.deleteMany(),
+    // P15 — interactive lessons (missing from the original cleanup: re-seeding
+    // a dirty DB died on FK P2003 from lesson.teacherId / progress.userId)
+    db.interactiveLessonProgress.deleteMany(),
+    db.interactiveStep.deleteMany(),
+    db.interactiveLesson.deleteMany(),
     db.user.deleteMany(),
   ]);
 
@@ -2292,10 +2297,86 @@ $\\Delta G < 0$ → واکنش خودبه‌خودی. $\\Delta G > 0$ → به �
       ],
     },
   ];
+  const createdP13Exams: Awaited<ReturnType<typeof makeExam>>[] = [];
   for (const e of p13Exams) {
-    await makeExam(e);
+    createdP13Exams.push(await makeExam(e));
   }
   console.log(`📝 +${p13Exams.length} exams created (10 published + 2 drafts)`);
+
+  // ---------- P16: exam attempts (platform looks alive) ----------
+  // Deterministic: one GRADED attempt per (exam, user) pair — the (question
+  // index + attempt index) parity decides correct/wrong, so three seed runs
+  // produce identical scores. Students are the one student + the other
+  // teachers (start route only blocks an exam's OWN author), so teacher
+  // نتایج tables show variety. No Date.now()-derived ordering.
+  async function makeSeededAttempt(
+    exam: { id: string },
+    student: { id: string },
+    idx: number,
+    days: number
+  ) {
+    const questions = await db.examQuestion.findMany({
+      where: { examId: exam.id },
+      orderBy: { order: "asc" },
+    });
+    const answers: Record<string, string> = {};
+    let autoScore = 0;
+    const maxScore = questions.reduce((s, q) => s + q.points, 0);
+    for (const [qi, q] of questions.entries()) {
+      const opts = q.options ? (JSON.parse(q.options) as { id: string }[]) : [];
+      const isCorrect = (qi + idx) % 4 !== 0; // 3 of 4 questions land correct
+      if (q.type === "MC" && opts.length > 0) {
+        if (isCorrect) {
+          answers[q.id] = q.correctOptionId!;
+          autoScore += q.points;
+        } else {
+          const wrong = opts.find((o) => o.id !== q.correctOptionId);
+          if (wrong) answers[q.id] = wrong.id;
+        }
+      } else if (q.type === "ESSAY") {
+        answers[q.id] =
+          "پاسخ نمونهٔ دانش‌آموز — مفهوم را با یک مثال ساده توضیح می‌دهم و در پایان نتیجه را جمع‌بندی می‌کنم.";
+      }
+    }
+    const hasEssay = questions.some((q) => q.type === "ESSAY");
+    const started = daysAgo(days);
+    const submitted = new Date(started.getTime() + 25 * 60 * 1000);
+    await db.examAttempt.create({
+      data: {
+        examId: exam.id,
+        studentId: student.id,
+        status: hasEssay ? "SUBMITTED" : "GRADED",
+        answers: JSON.stringify(answers),
+        autoScore,
+        manualScore: null,
+        score: autoScore,
+        maxScore,
+        startedAt: started,
+        submittedAt: submitted,
+      },
+    });
+  }
+  const [examMoshagh, examDayere, examVarians] = createdP13Exams;
+  if (examMoshagh && examDayere && examVarians) {
+    // مشتق (mohammad): hossein + 4 non-author teachers
+    await makeSeededAttempt(examMoshagh, hossein, 0, 9);
+    await makeSeededAttempt(examMoshagh, ali, 1, 9);
+    await makeSeededAttempt(examMoshagh, zahra, 2, 8);
+    await makeSeededAttempt(examMoshagh, sara, 3, 8);
+    await makeSeededAttempt(examMoshagh, fateme, 4, 7);
+    // دایرهٔ هندسه (mohammad): hossein + 3
+    await makeSeededAttempt(examDayere, hossein, 1, 6);
+    await makeSeededAttempt(examDayere, ali, 2, 6);
+    await makeSeededAttempt(examDayere, zahra, 3, 5);
+    await makeSeededAttempt(examDayere, mehdi, 0, 5);
+    // واریانس (ali): hossein + 4 non-author
+    await makeSeededAttempt(examVarians, hossein, 2, 4);
+    await makeSeededAttempt(examVarians, mohammad, 0, 4);
+    await makeSeededAttempt(examVarians, zahra, 1, 3);
+    await makeSeededAttempt(examVarians, sara, 3, 3);
+    await makeSeededAttempt(examVarians, mehdi, 2, 2);
+    console.log("🧮 14 exam attempts created (deterministic mix of scores)");
+  }
 
   // ---------- P15: interactive lessons (TEXT / MC / NUMERIC steps) ----------
   async function makeInteractiveLesson(opts: {

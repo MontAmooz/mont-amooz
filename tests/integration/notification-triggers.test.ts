@@ -3,7 +3,7 @@
 // skipped by notify(). Recipients are read back through GET /notifications.
 import { describe, test, expect } from "vitest";
 import fs from "node:fs";
-import { api, createCourse, createPamphlet, createSlots, ensureWalletBalance, registerUser } from "../helpers/server";
+import { api, createCourse, createPamphlet, createSlots, DEMO_USERS, ensureWalletBalance, loginAs, registerUser } from "../helpers/server";
 
 const baseUrl = () => fs.readFileSync("/tmp/oeg-test-url.txt", "utf8").trim();
 
@@ -13,6 +13,7 @@ type Item = {
   title: string;
   body: string | null;
   linkUrl: string | null;
+  relatedType: string | null;
   readAt: string | null;
 };
 
@@ -204,5 +205,25 @@ describe("Course purchase trigger", () => {
     expect(purchases).toHaveLength(1); // free enrollment stays silent
     expect(purchases[0].body).toContain("خرید");
     expect(purchases[0].linkUrl).toBe(`#/course/${paid.id}`);
+  });
+});
+
+// ===================== P16 — admin notified on registration =====================
+
+describe("P16 — NEW_USER_REGISTERED", () => {
+  test("registration → every admin gets a notification with the new user's name", async () => {
+    const admin = await loginAs(baseUrl(), DEMO_USERS.founder.email, DEMO_USERS.founder.password);
+    const uniqueName = `معلم تازه ${Date.now()}`;
+    const { user } = await registerUser(baseUrl(), { fullName: uniqueName });
+
+    const notes = await notifications(admin);
+    const registered = notes.find((n) => n.type === "NEW_USER_REGISTERED");
+    expect(registered).toBeTruthy();
+    expect(registered!.body).toContain(uniqueName);
+    expect(registered!.body).toContain("معلم"); // the role
+    expect(registered!.linkUrl).toBe("#/admin");
+    expect(registered!.relatedType).toBe("user");
+    expect(registered!.readAt).toBeNull();
+
   });
 });

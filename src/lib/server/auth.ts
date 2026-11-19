@@ -77,7 +77,7 @@ export async function setSessionCookie(
   store.set(SESSION_COOKIE, createSessionToken(userId, maxAgeSec * 1000), {
     httpOnly: true,
     sameSite: "lax",
-    secure: false, // sandbox runs behind http proxy
+    secure: false, // ⚠️ MUST flip to true before HTTPS deployment — see docs/DEPLOYMENT.md § "Cookie secure flag"
     path: "/",
     maxAge: maxAgeSec,
   });

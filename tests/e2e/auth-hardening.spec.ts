@@ -21,10 +21,10 @@ test("filled honeypot blocks registration with the generic error", async ({ page
   await expect(page.getByRole("dialog")).toBeVisible(); // still on the dialog
 });
 
-test("11 rapid failed logins from one IP hit the rate limit (429, Persian message)", async ({ page }) => {
+test("21 rapid failed logins from one IP hit the rate limit (429, Persian message)", async ({ page }) => {
   const ip = `10.55.${Math.floor(Math.random() * 100)}.7`;
   let status = 0;
-  for (let i = 0; i < 11; i++) {
+  for (let i = 0; i < 21; i++) {
     const res = await page.request.post("/api/v1/auth/login", {
       headers: { "X-Forwarded-For": ip },
       data: { email: `nobody-${Date.now()}@example.com`, password: "wrong-password" },

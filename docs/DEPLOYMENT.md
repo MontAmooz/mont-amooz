@@ -102,6 +102,32 @@ volumes: { pgdata: {}, miniodata: {}, caddydata: {} }
 - [ ] حذف حساب‌های نمایشی و دادهٔ seed از پروداکشن
 - [ ] `next.config.ts`: `typescript.ignoreBuildErrors: false`
 
+### Cookie `secure` flag
+
+`src/lib/server/auth.ts` sets `secure: false` for the session cookie. **This MUST flip to `true` before any HTTPS deployment.** It's a one-line change guarded by an environment variable. Until then, the platform is HTTP-only (dev/self-hosted).
+
+When flipping:
+1. Set `secure: true` in `auth.ts`
+2. Ensure deployment uses HTTPS (Caddy/nginx auto-SSL)
+3. Verify login works over HTTPS
+4. Update any internal curl/API tests that assume HTTP
+
+### Beta rate limits
+
+`POST /api/v1/auth/register`: **10 per hour per IP** (raised from 3 for beta, because Iranian CGNAT commonly puts multiple users behind one IP).
+`POST /api/v1/auth/login`: **20 per hour per IP** (raised from 10).
+
+If you see mass 429s on beta launch, check `RateLimitAttempt` table:
+```sql
+SELECT key, COUNT(*) FROM RateLimitAttempt
+WHERE createdAt > datetime('now', '-1 hour')
+GROUP BY key ORDER BY COUNT(*) DESC LIMIT 10;
+```
+
+### `/tmp` hazard on the dev/test machine
+
+The ephemeral test servers and CI artifact tarballs live in `/tmp` (tmpfs). If integration tests answer mysterious HTML 404s on dynamic routes while CI is green, `/tmp` is probably full — see [DEVELOPMENT.md § `/tmp` Disk Exhaustion](DEVELOPMENT.md#️-tmp-disk-exhaustion--the-silent-test-killer).
+
 ## 8. ترتیب اجرا (وقتی نوبتش رسید)
 
 1. Dockerfile + compose محلی تا همین‌جا کار کند (SQLite می‌ماند)

@@ -96,6 +96,8 @@ cd mini-services/classroom-service && bun install && bun run dev
 | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | راهنمای مشارکت (معلم/برنامه‌نویس/طراح/تایپیست) |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | محیط توسعه و عیب‌یابی |
 | [docs/GIT-STRATEGY.md](docs/GIT-STRATEGY.md) | استراتژی شاخه‌ها و انتشار |
+| [docs/USER-GUIDE-TEACHERS.md](docs/USER-GUIDE-TEACHERS.md) | راهنمای معلمان — ثبت‌نام تا پنل تدریس |
+| [docs/USER-GUIDE-STUDENTS.md](docs/USER-GUIDE-STUDENTS.md) | راهنمای دانش‌آموزان — جزوه تا کلاس |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | طرح استقرار پروداکشن (هنوز پیاده نشده) |
 | [docs/BRAND.md](docs/BRAND.md) | هویت بصری و لحن برند |
 | [SECURITY.md](SECURITY.md) | گزارش آسیب‌پذیری |

@@ -32,6 +32,7 @@ import { NotificationsView } from "@/components/edu/notifications-view";
 import { PamphletView } from "@/components/edu/pamphlet-view";
 import { ProfileView } from "@/components/edu/profile-view";
 import { ResetConfirmView } from "@/components/edu/reset-view";
+import { WelcomeView } from "@/components/edu/welcome-view";
 import { RequestDetailView } from "@/components/edu/request-detail-view";
 import { RequestsView } from "@/components/edu/requests-view";
 import { useHashRoute } from "@/components/edu/router";
@@ -253,6 +254,9 @@ export default function Page() {
         );
       case "lesson":
         return <LessonPlayerView key={route.id} id={route.id} />;
+      // ----- P16 — first-login welcome -----
+      case "welcome":
+        return <WelcomeView />;
       default:
         return <HomeView params={{}} />;
     }

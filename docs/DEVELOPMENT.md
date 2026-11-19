@@ -97,6 +97,26 @@ curl -s localhost:3000/api/v1/stats                                     # pamphl
 | `sqlitesyntaxerror` بعد از تغییر اسکیما | کلاینت قدیمی | `bun prisma generate` + ری‌استارت dev |
 | lint خطای `set-state-in-effect` می‌دهد | قواعد سختگیرانهٔ React Compiler فعلی | شناخته‌شده — در P3 اصلاح می‌شود (فعلاً ۴ مورد) |
 
+### ⚠️ `/tmp` Disk Exhaustion — The Silent Test Killer
+
+**Symptom:** Integration tests fail with mysterious 404s on dynamic routes; CI is green but local is red; failures are order-dependent; server starts but specific routes return HTML 404 pages.
+
+**Cause:** `/tmp` is a 7.7GB tmpfs on this machine. The test helper creates ~200MB app copies per run; artifact tarballs are ~394MB each. After a few days of runs + uploads, `/tmp` fills. The dev server's background route compilation then half-writes files, permanently 404ing affected routes for that server's lifetime (P15 lesson — cost half a day to diagnose).
+
+**Fix:**
+```bash
+df -h /tmp                          # check
+rm -rf /tmp/oeg-test-*              # stale app copies
+rm -f /tmp/node_modules-ci.tgz      # leftover tarball
+rm -rf /tmp/oeg-seed-* /tmp/seed-*  # stale seed DBs
+df -h /tmp                          # verify ≥2GB
+```
+
+**Prevention:**
+- Test helper auto-checks `/tmp` free space (≥2GB required) — fails fast with clear message
+- Test helper auto-cleans `oeg-test-*` dirs older than 24h
+- **After every `gh release upload v0.3.0-deps`, run `rm /tmp/node_modules-ci.tgz` immediately** — the tarball has done its job
+
 ## قراردادهای کدنویسی
 
 - فرانت: کامپوننت React + TypeScript، **RTL همیشه**، بدون استایل inline (BRAND.md §8)، فقط پالت برند (#DD614C و خانواده‌اش — **آبی/ایندیگو ممنوع**)
