@@ -20,7 +20,60 @@ let uploadsDir: string | null = null;
  * root-owned docker-proxy on the maintainer's machine, so the default is 3002. */
 export const TEST_PORT = process.env.TEST_PORT ?? "3002";
 
+/** P15 lesson institutionalized: /tmp is a small tmpfs here, and this suite's
+ * app copies (~200MB) + CI artifact tarballs (~394MB) have filled it before.
+ * Under ENOSPC the dev server half-writes route artifacts and affected
+ * dynamic routes then answer Next's HTML 404 for the server's whole lifetime
+ * — which looks exactly like an app bug (CI green, local red, order-dependent).
+ * Fail fast with a fix recipe instead of burning an afternoon. */
+function checkTmpSpace(): void {
+  try {
+    const out = execSync("df -P /tmp | tail -1 | awk '{print $4}'", { encoding: "utf8" });
+    const freeKB = parseInt(out.trim(), 10);
+    if (isNaN(freeKB)) {
+      console.warn("⚠️  Could not check /tmp space — proceeding anyway");
+      return;
+    }
+    const freeMB = freeKB / 1024;
+    if (freeMB < 2000) {
+      throw new Error(
+        `/tmp has only ${Math.floor(freeMB)}MB free (< 2GB required).\n` +
+        `Cause: accumulated oeg-test-* app copies or leftover CI tarballs.\n` +
+        `Fix: rm -rf /tmp/oeg-test-* /tmp/node_modules-ci.tgz /tmp/oeg-seed-*\n` +
+        `Verify: df -h /tmp`
+      );
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("/tmp has only")) throw e;
+    console.warn("⚠️  /tmp check failed:", e);
+  }
+}
+
+/** Sweeper for crashed runs: a startTestServer that throws mid-way leaks its
+ * app copy / DB (stopTestServer never runs). Anything older than 24h is dead
+ * weight from a previous session — remove it. */
+function cleanupStaleTmpDirs(): void {
+  try {
+    const now = Date.now();
+    const dirs = execSync("ls -d /tmp/oeg-test-* 2>/dev/null", { encoding: "utf8" })
+      .trim()
+      .split("\n")
+      .filter(Boolean);
+    for (const d of dirs) {
+      try {
+        const stat = execSync(`stat -c %Y "${d}"`, { encoding: "utf8" }).trim();
+        const ageMs = now - parseInt(stat, 10) * 1000;
+        if (ageMs > 24 * 3600 * 1000) {
+          execSync(`rm -rf "${d}"`);
+        }
+      } catch {}
+    }
+  } catch {}
+}
+
 export async function startTestServer(): Promise<{ baseUrl: string }> {
+  checkTmpSpace();
+  cleanupStaleTmpDirs();
   const repoRoot = path.resolve(import.meta.dirname, "..", "..");
 
   // Fresh DB per test run

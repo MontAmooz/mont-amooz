@@ -1,10 +1,11 @@
 // POST /api/v1/auth/register — create account + session
-// P10: rate-limited per IP (3/h) + honeypot field (`website` — bots fill it,
-// humans never see it).
+// P10: rate-limited per IP (10/h for beta, was 3) + honeypot field (`website` —
+// bots fill it, humans never see it).
 import { db } from "@/lib/db";
 import { ROLES } from "@/lib/constants";
 import { hashPassword, setSessionCookie, toPublicUser } from "@/lib/server/auth";
 import { asString, fail, failRateLimit, ok, oneOf, readJson } from "@/lib/server/http";
+import { notify } from "@/lib/server/notify";
 import { checkRateLimit, getClientIp, RateLimitError } from "@/lib/server/rate-limit";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,7 +21,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    await checkRateLimit(`register:${getClientIp(req)}`, 3, 3600);
+    // 10/h/IP — raised from 3/h for beta (Iranian CGNAT commonly shares one IP
+    // across multiple users; 3/h blocked the second teacher on any shared network).
+    await checkRateLimit(`register:${getClientIp(req)}`, 10, 3600);
   } catch (e) {
     if (e instanceof RateLimitError) return failRateLimit(e);
     throw e;
@@ -52,5 +55,23 @@ export async function POST(req: Request) {
     data: { email, passwordHash: hashPassword(password), fullName, role },
   });
   await setSessionCookie(user.id);
+
+  // P16 — tell every admin a new account appeared (the founder onboards the
+  // waiting beta teachers). notify() skips self-notification when an admin
+  // registers themselves, and never throws into the main action.
+  const admins = await db.user.findMany({ where: { isAdmin: true }, select: { id: true } });
+  for (const admin of admins) {
+    await notify({
+      userId: admin.id,
+      actorId: user.id,
+      type: "NEW_USER_REGISTERED",
+      title: "ثبت‌نام کاربر جدید",
+      body: `«${user.fullName}» با نقش «${user.role}» ثبت‌نام کرد`,
+      linkUrl: "#/admin",
+      relatedId: user.id,
+      relatedType: "user",
+    });
+  }
+
   return ok({ user: toPublicUser(user) }, 201);
 }

@@ -95,6 +95,19 @@ export function AuthDialog() {
       );
       setUser(user);
       closeAuth();
+      // P16 — first-login welcome: on the FIRST explicit login/register (not on
+      // session restores, which never go through here), land first-timers on
+      // the intro. The flag makes every later login stay wherever they were.
+      try {
+        if (!window.localStorage.getItem("montamooz_welcomed")) {
+          window.localStorage.setItem("montamooz_welcomed", "1");
+          if (window.location.hash === "" || window.location.hash === "#/") {
+            window.location.hash = "#/welcome";
+          }
+        }
+      } catch {
+        // private-mode storage — skip the welcome, never break the login
+      }
       setLoginPassword("");
       setRegPassword("");
       setWebsiteHoneypot("");

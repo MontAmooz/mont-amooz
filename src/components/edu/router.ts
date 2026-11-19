@@ -63,7 +63,9 @@ export type Route =
   | { name: "lessons"; mine: boolean }
   | { name: "lesson-new" }
   | { name: "lesson-edit"; id: string }
-  | { name: "lesson"; id: string };
+  | { name: "lesson"; id: string }
+  // P16 — first-login welcome
+  | { name: "welcome" };
 
 const HOME: Route = { name: "home", params: {} };
 
@@ -171,6 +173,8 @@ export function parseHash(hash: string): Route {
       return { name: "reset" };
     case "notifications":
       return { name: "notifications" };
+    case "welcome":
+      return { name: "welcome" };
     case "exams":
       return { name: "exams", mine: false };
     case "lessons":

@@ -1,5 +1,5 @@
 // POST /api/v1/auth/login — email + password → session cookie
-// P10: rate-limited per IP (10/h) + optional remember-me (30d vs 24h).
+// P10: rate-limited per IP (20/h for beta, was 10) + optional remember-me (30d vs 24h).
 import { db } from "@/lib/db";
 import {
   setSessionCookie,
@@ -19,7 +19,9 @@ export async function POST(req: Request) {
   if (!email || !password) return fail("ایمیل و رمز عبور الزامی است");
 
   try {
-    await checkRateLimit(`login:${getClientIp(req)}`, 10, 3600);
+    // 20/h/IP — raised from 10/h for beta (Iranian CGNAT commonly shares one IP
+    // across multiple users; 10/h locked out the second person on any shared network).
+    await checkRateLimit(`login:${getClientIp(req)}`, 20, 3600);
   } catch (e) {
     if (e instanceof RateLimitError) return failRateLimit(e);
     throw e;
