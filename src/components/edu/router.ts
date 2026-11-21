@@ -68,7 +68,9 @@ export type Route =
   | { name: "welcome" }
   // P17 — teacher experience & discovery
   | { name: "teacher-analytics" }
-  | { name: "subject"; subject: string };
+  | { name: "subject"; subject: string }
+  // P18 — student learning dashboard
+  | { name: "my-learning" };
 
 const HOME: Route = { name: "home", params: {} };
 
@@ -183,6 +185,8 @@ export function parseHash(hash: string): Route {
       return { name: "welcome" };
     case "subject":
       return id ? { name: "subject", subject: decodeURIComponent(id) } : HOME;
+    case "my-learning":
+      return { name: "my-learning" };
     case "exams":
       return { name: "exams", mine: false };
     case "lessons":
