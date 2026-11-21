@@ -130,6 +130,7 @@ describe("Pamphlets — GET /pamphlets/[id]", () => {
     const r = await api<{
       id: string; content: string; latestVersionNumber: number; versions: unknown[];
       contributors: unknown[]; isMine: boolean; openMergeRequestCount: number;
+      commentCount: number;
     }>(baseUrl(), `/api/v1/pamphlets/${id}`, { cookie });
     expect(r.status).toBe(200);
     expect(r.data.id).toBe(id);
@@ -138,6 +139,7 @@ describe("Pamphlets — GET /pamphlets/[id]", () => {
     expect(r.data.versions).toHaveLength(1);
     expect(r.data.isMine).toBe(true);
     expect(r.data.openMergeRequestCount).toBe(0);
+    expect(r.data.commentCount).toBe(0); // P19 — no Q&A on a fresh pamphlet
   });
 
   test("unknown id → 404 «جزوه پیدا نشد»", async () => {

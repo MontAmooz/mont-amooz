@@ -41,8 +41,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     .update({ where: { id }, data: { viewCount: { increment: 1 } } })
     .catch(() => undefined);
 
-  const [openMergeRequestCount, myReviewRow] = await Promise.all([
+  const [openMergeRequestCount, commentCount, myReviewRow] = await Promise.all([
     db.mergeRequest.count({ where: { targetId: id, status: "OPEN" } }),
+    // P19 — live Q&A comment count for the tab badge (soft-deleted excluded)
+    db.pamphletComment.count({ where: { pamphletId: id, deletedAt: null } }),
     user
       ? db.review.findUnique({
           where: { pamphletId_userId: { pamphletId: id, userId: user.id } },
@@ -78,6 +80,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       createdAt: a.createdAt.toISOString(),
     })),
     openMergeRequestCount,
+    commentCount,
     isMine: !!user && user.id === p.authorId,
     myReview: myReviewRow ? toReviewItem(myReviewRow, user?.id ?? null) : null,
   });

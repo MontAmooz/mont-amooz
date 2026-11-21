@@ -56,6 +56,9 @@ model User {
   // P15 — interactive lessons
   authoredLessons           InteractiveLesson[]         @relation("AuthoredLessons")
   interactiveLessonProgress InteractiveLessonProgress[] @relation("UserLessonProgress")
+
+  // P19 — pamphlet Q&A
+  pamphletComments PamphletComment[] @relation("PamphletCommentAuthor")
 }
 
 model Pamphlet {
@@ -83,6 +86,9 @@ model Pamphlet {
   attachments PamphletAttachment[]
   sourceMRs  MergeRequest[]     @relation("MRSource")
   targetMRs  MergeRequest[]     @relation("MRTarget")
+
+  // P19 — pamphlet Q&A
+  comments PamphletComment[]
 
   @@index([grade, subject])
   @@index([authorId])
@@ -564,4 +570,29 @@ model InteractiveLessonProgress {
   @@unique([lessonId, userId])
   @@index([userId])
   @@index([completedAt])
+}
+
+// ===================== P19 — Pamphlet Q&A =====================
+
+// Questions and answers on a pamphlet (P19). Single-level nesting by design:
+// replies reference a top-level comment only (parent.parentId must be null).
+// Soft delete — the row stays so replies keep their parent; the API returns
+// an empty body for deleted comments.
+model PamphletComment {
+  id         String    @id @default(cuid())
+  pamphletId String
+  authorId   String
+  parentId   String?
+  body       String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  pamphlet Pamphlet          @relation(fields: [pamphletId], references: [id], onDelete: Cascade)
+  author   User              @relation("PamphletCommentAuthor", fields: [authorId], references: [id])
+  parent   PamphletComment?  @relation("PamphletCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  PamphletComment[] @relation("PamphletCommentReplies")
+
+  @@index([pamphletId, parentId, createdAt])
+  @@index([authorId])
 }

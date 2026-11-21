@@ -8,6 +8,7 @@ export type NotificationType =
   | "MR_RECEIVED"
   | "MR_REVIEWED"
   | "REVIEW_RECEIVED"
+  | "COMMENT_RECEIVED"
   | "SESSION_BOOKED"
   | "SESSION_COMPLETED"
   | "COURSE_PURCHASED"

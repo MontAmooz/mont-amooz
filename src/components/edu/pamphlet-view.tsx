@@ -35,6 +35,7 @@ import { MarkdownViewer } from "./markdown-viewer";
 import { navigate } from "./router";
 import { RatingStars } from "./rating-stars";
 import { useFetch } from "./hooks";
+import { PamphletQA } from "./pamphlet-qa";
 import { RelatedPamphlets } from "./related-pamphlets";
 import { useEduStore } from "./store";
 
@@ -572,6 +573,17 @@ export function PamphletView({ id }: { id: string }) {
             بازخوردها
           </TabsTrigger>
           <TabsTrigger
+            value="qa"
+            className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-bold text-gray-500 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+          >
+            پرسش و پاسخ
+            {p.commentCount > 0 && (
+              <span className="oeg-mono ms-1 bg-gray-100 px-1.5 text-xs">
+                {faNumber(p.commentCount)}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger
             value="mrs"
             className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-bold text-gray-500 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
           >
@@ -782,6 +794,11 @@ export function PamphletView({ id }: { id: string }) {
               description="اولین نفری باشید که تجربهٔ خود را از این جزوه می‌نویسد."
             />
           )}
+        </TabsContent>
+
+        {/* پرسش و پاسخ (P19) */}
+        <TabsContent value="qa" className="mt-4">
+          <PamphletQA pamphletId={p.id} onChanged={detail.retry} />
         </TabsContent>
 
         {/* درخواست‌های ادغام */}
