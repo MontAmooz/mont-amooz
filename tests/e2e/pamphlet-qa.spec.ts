@@ -17,7 +17,7 @@ async function founderPamphlet(
       subject: "ریاضی",
       teachingMethod: "مفهومی",
       difficulty: "متوسط",
-      content: "# جزوهٔ پرسش و پاسخ\n\nاین جزوه برای آزمون تب پرسش و پاسخ است و بیش از سی نویسه دارد.",
+      content: "## جزوهٔ پرسش و پاسخ\n\nاین جزوه برای آزمون تب پرسش و پاسخ است و بیش از سی نویسه دارد.",
     },
   });
   expect(created.status()).toBe(201);
@@ -33,7 +33,7 @@ test("student asks, the author replies, the student sees the reply", async ({ pa
   const s = await pageWithCookie(browser, studentCookie);
 
   await s.goto(`#/pamphlet/${pid}`);
-  await expect(s.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 20000 });
+  await expect(s.getByRole("heading", { name: /جزوهٔ پرسش‌وپاسخ P19/ })).toBeVisible({ timeout: 20000 });
   await s.getByRole("tab", { name: /پرسش و پاسخ/ }).click();
   await expect(s.getByText("هنوز پرسشی ثبت نشده است")).toBeVisible({ timeout: 10000 });
 
@@ -52,7 +52,7 @@ test("student asks, the author replies, the student sees the reply", async ({ pa
   // the pamphlet author replies from their own session
   const f = await pageWithCookie(browser, founderCookie);
   await f.goto(`#/pamphlet/${pid}`);
-  await expect(f.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 20000 });
+  await expect(f.getByRole("heading", { name: /جزوهٔ پرسش‌وپاسخ P19/ })).toBeVisible({ timeout: 20000 });
   await f.getByRole("tab", { name: /پرسش و پاسخ/ }).click();
   await expect(f.getByText("این قسمت را نمی‌فهمم — می‌شود مثال بزنید؟")).toBeVisible({
     timeout: 10000,
@@ -71,7 +71,7 @@ test("student asks, the author replies, the student sees the reply", async ({ pa
 
   // the student re-opens the pamphlet and sees the reply nested under the question
   await s.reload();
-  await expect(s.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 20000 });
+  await expect(s.getByRole("heading", { name: /جزوهٔ پرسش‌وپاسخ P19/ })).toBeVisible({ timeout: 20000 });
   await s.getByRole("tab", { name: /پرسش و پاسخ/ }).click();
   await expect(s.getByText("حتماً — صفحهٔ ۳ را دوباره بخوانید و روی مثال ۲ تمرکز کنید.")).toBeVisible({
     timeout: 10000,
@@ -88,7 +88,7 @@ test("deleting your own comment leaves the placeholder in place", async ({ page,
   const s = await pageWithCookie(browser, studentCookie);
 
   await s.goto(`#/pamphlet/${pid}`);
-  await expect(s.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 20000 });
+  await expect(s.getByRole("heading", { name: /جزوهٔ پرسش‌وپاسخ P19/ })).toBeVisible({ timeout: 20000 });
   await s.getByRole("tab", { name: /پرسش و پاسخ/ }).click();
   await expect(s.getByText("هنوز پرسشی ثبت نشده است")).toBeVisible({ timeout: 10000 });
 
