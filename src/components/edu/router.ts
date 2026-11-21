@@ -65,7 +65,10 @@ export type Route =
   | { name: "lesson-edit"; id: string }
   | { name: "lesson"; id: string }
   // P16 — first-login welcome
-  | { name: "welcome" };
+  | { name: "welcome" }
+  // P17 — teacher experience & discovery
+  | { name: "teacher-analytics" }
+  | { name: "subject"; subject: string };
 
 const HOME: Route = { name: "home", params: {} };
 
@@ -130,6 +133,9 @@ export function parseHash(hash: string): Route {
   if (head === "exam" && id && extra === "edit") return { name: "exam-edit", id };
   if (head === "exam" && id === "new") return { name: "exam-new" };
   if (head === "exam" && id) return { name: "exam", id };
+  // P17 — #/teach/analytics | #/subject/{subject}
+  if (head === "teach" && id === "analytics") return { name: "teacher-analytics" };
+  if (head === "subject" && id) return { name: "subject", subject: decodeURIComponent(id) };
   // P15 — interactive lessons: #/lesson/new | #/lesson/{id} | #/lesson/{id}/edit
   if (head === "lesson" && !id) return { name: "lessons", mine: false };
   if (head === "lessons") return { name: "lessons", mine: query.get("mine") === "true" };
@@ -175,6 +181,8 @@ export function parseHash(hash: string): Route {
       return { name: "notifications" };
     case "welcome":
       return { name: "welcome" };
+    case "subject":
+      return id ? { name: "subject", subject: decodeURIComponent(id) } : HOME;
     case "exams":
       return { name: "exams", mine: false };
     case "lessons":

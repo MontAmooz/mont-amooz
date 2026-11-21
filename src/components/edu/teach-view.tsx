@@ -4,6 +4,7 @@
 // برنامهٔ تدریس (slot create/delete), دوره‌ها (my courses + management + create wizard).
 
 import {
+  BarChart3,
   BookOpenCheck,
   CalendarClock,
   CalendarDays,
@@ -1584,6 +1585,13 @@ export default function TeachView() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate("#/teach/analytics")}
+            className="h-11 border-2 border-ink font-bold hover:bg-gray-50 md:h-10"
+          >
+            <BarChart3 className="size-4" aria-hidden="true" /> آمار جزوه‌ها
+          </Button>
           <Button
             variant="outline"
             onClick={() => navigate(`#/user/${user.id}`)}

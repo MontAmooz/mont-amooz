@@ -178,6 +178,8 @@ export interface PamphletAttachmentItem {
   contentType: string;
   sizeBytes: number;
   signedUrl: string;
+  /** P17 — inline HTML preview URL (Word/Markdown/text); null for PDF */
+  htmlUrl: string | null;
   createdAt: string;
 }
 
@@ -586,3 +588,34 @@ export type TeacherLessonCard = {
   estimatedMinutes: number | null;
   stepCount: number;
 };
+
+// ===================== P17 — teacher analytics =====================
+
+export interface TeacherAnalyticsItem {
+  id: string;
+  title: string;
+  subject: string;
+  grade: string;
+  viewCount: number;
+  versionCount: number;
+  reviewCount: number;
+  forkCount: number;
+  mergeRequestCount: number;
+  updatedAt: string;
+}
+
+export interface TeacherAnalytics {
+  items: TeacherAnalyticsItem[];
+  summary: {
+    pamphletCount: number;
+    totalViews: number;
+    totalForks: number;
+    totalReviews: number;
+    totalMRs: number;
+  };
+}
+
+/** GET /pamphlets/[id]/related — up to 6 same-subject / same-grade+method. */
+export interface RelatedPamphletsResponse {
+  items: PamphletSummary[];
+}

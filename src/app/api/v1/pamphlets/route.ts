@@ -67,6 +67,8 @@ export async function GET(req: Request) {
     items.sort((a, b) => b.viewCount - a.viewCount);
   } else if (sort === "top") {
     items.sort((a, b) => b.ratingAvg - a.ratingAvg || b.ratingCount - a.ratingCount);
+  } else if (sort === "forks_desc") {
+    items.sort((a, b) => b.forkCount - a.forkCount || b.viewCount - a.viewCount);
   } else {
     items.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
   }

@@ -68,6 +68,7 @@ export const SORT_OPTIONS = [
   { value: "newest", label: "جدیدترین" },
   { value: "top", label: "بهترین امتیاز" },
   { value: "popular", label: "پربازدیدترین" },
+  { value: "forks_desc", label: "پرفورک‌ترین" },
 ] as const;
 
 // ===================== Phase 2 — Teaching Marketplace =====================

@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { fail, ok, requireUser, unauthorized } from "@/lib/server/http";
 import { extractText } from "@/lib/server/extract";
-import { saveFile, signedDownloadUrl, validateFile } from "@/lib/server/storage";
+import { saveFile, signedDownloadUrl, signedHtmlUrl, validateFile } from "@/lib/server/storage";
 import type { PamphletAttachmentItem } from "@/lib/types";
 
 const ALLOWED_MIMES = new Set([
@@ -117,6 +117,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     contentType: a.contentType,
     sizeBytes: a.sizeBytes,
     signedUrl: signedDownloadUrl(a.id),
+    htmlUrl: a.contentType === "application/pdf" ? null : signedHtmlUrl(a.id),
     createdAt: a.createdAt.toISOString(),
   }));
   return ok({ items });
