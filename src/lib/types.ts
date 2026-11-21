@@ -217,6 +217,7 @@ export interface PamphletDetail extends PamphletSummary {
   contributors: Contributor[];
   attachments: PamphletAttachmentItem[];
   openMergeRequestCount: number;
+  commentCount: number;
   isMine: boolean;
   myReview?: ReviewItem | null;
 }
@@ -676,4 +677,30 @@ export type StudentDashboard = {
   summary: DashboardSummary;
   upcoming: DashboardUpcoming;
   recent: DashboardActivity[]; // max 20, sorted by updatedAt desc
+};
+
+// ===================== P19 — pamphlet Q&A =====================
+
+export type CommentAuthor = {
+  id: string;
+  fullName: string;
+  title: string | null;
+  isAdmin: boolean;
+  isPamphletAuthor: boolean; // true if this author owns the pamphlet
+};
+
+export type PamphletCommentItem = {
+  id: string;
+  body: string; // empty string if deleted
+  deleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  author: CommentAuthor;
+  isMine: boolean;
+  replies: PamphletCommentItem[]; // always empty for replies (single-level)
+};
+
+export type CommentListResponse = {
+  items: PamphletCommentItem[]; // top-level only; replies nested
+  total: number; // count of top-level + replies
 };

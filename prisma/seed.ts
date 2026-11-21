@@ -12,6 +12,9 @@ const daysAgo = (n: number, hours = 0) =>
 async function main() {
   console.log("🌱 Seeding OpenEdu Git …");
   await db.$transaction([
+    // P19 — pamphlet Q&A (must precede pamphlet/user deletes or re-seeding
+    // a dirty DB hits FK P2003 from comments.pamphletId / authorId / parentId)
+    db.pamphletComment.deleteMany(),
     db.reviewVote.deleteMany(),
     db.review.deleteMany(),
     db.mergeRequest.deleteMany(),
@@ -954,6 +957,46 @@ $y' = 5(2x+1)^4 \\times 2 = 10(2x+1)^4$
     createdReviews.push(created);
   }
   console.log(`⭐ ${createdReviews.length} reviews created`);
+
+  // ---------- P19 — Q&A threads on the most-viewed pamphlets ----------
+  // Student asks, the pamphlet's crowd answers — makes the new پرسش و پاسخ
+  // tab look alive in the demo. Natural Persian content (no placeholders).
+  const popularPamphlets = await db.pamphlet.findMany({
+    where: { status: "PUBLISHED" },
+    orderBy: { viewCount: "desc" },
+    take: 3,
+  });
+  const teacher2 = ali;
+  if (popularPamphlets.length > 0) {
+    let qaCount = 0;
+    for (const p of popularPamphlets) {
+      const q = await db.pamphletComment.create({
+        data: {
+          pamphletId: p.id,
+          authorId: hossein.id,
+          body: "سلام، در بخش مشتق‌گیری زنجیره‌ای گیر کردم. مثال دوم رو نمی‌فهمم چرا این‌طوری می‌شه. می‌شه یه مثال ساده‌تر بگید؟",
+        },
+      });
+      await db.pamphletComment.create({
+        data: {
+          pamphletId: p.id,
+          authorId: teacher2.id,
+          parentId: q.id,
+          body: "بله، سؤال خوبی است. این قسمت رو با یک مثال بیشتر باز می‌کنم. آیا می‌توانید صفحهٔ ۳ را دوباره بخوانید؟",
+        },
+      });
+      await db.pamphletComment.create({
+        data: {
+          pamphletId: p.id,
+          authorId: hossein.id,
+          parentId: q.id,
+          body: "ممنون، الان متوجه شدم!",
+        },
+      });
+      qaCount += 3;
+    }
+    console.log(`💬 ${qaCount} Q&A comments created on ${popularPamphlets.length} popular pamphlets`);
+  }
 
   // ---------- rejected MR data ----------
   const movP = byTitle("حرکت‌شناسی");
