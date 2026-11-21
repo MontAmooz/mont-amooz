@@ -619,3 +619,61 @@ export interface TeacherAnalytics {
 export interface RelatedPamphletsResponse {
   items: PamphletSummary[];
 }
+
+// ===================== P18 — student learning dashboard =====================
+
+export type DashboardActivityType = "lesson" | "exam" | "course" | "session";
+
+export type DashboardActivity = {
+  type: DashboardActivityType;
+  id: string; // resource id (lesson, exam, course, session)
+  title: string; // lesson/exam/course title, or session topic
+  subtitle: string; // e.g. «گام ۳ از ۷», «امتیاز ۸ از ۱۰», «۳ از ۵ درس»
+  updatedAt: string;
+  linkUrl: string; // client hash URL
+  progressPct?: number; // 0-100 (lessons, courses)
+  scorePct?: number; // 0-100 (exams)
+};
+
+export type DashboardSummary = {
+  interactiveLessons: {
+    started: number;
+    completed: number;
+    totalAvailable: number;
+  };
+  exams: {
+    taken: number;
+    averageScorePct: number | null; // 0-100, null if none taken
+  };
+  courses: {
+    enrolled: number;
+    averageProgressPct: number | null; // 0-100, null if none
+  };
+  sessions: {
+    attended: number; // COMPLETED only
+    upcoming: number; // BOOKED and in the future
+  };
+};
+
+export type DashboardUpcoming = {
+  nextSession: {
+    id: string;
+    topic: string | null;
+    startAt: string;
+    teacherName: string; // the session's teacher
+    studentName: string; // the session's student (shown when the viewer teaches)
+    role: "student" | "teacher"; // viewer's role in this session
+  } | null;
+  nextLesson: {
+    lessonId: string;
+    lessonTitle: string;
+    currentStep: number;
+    totalSteps: number;
+  } | null;
+};
+
+export type StudentDashboard = {
+  summary: DashboardSummary;
+  upcoming: DashboardUpcoming;
+  recent: DashboardActivity[]; // max 20, sorted by updatedAt desc
+};

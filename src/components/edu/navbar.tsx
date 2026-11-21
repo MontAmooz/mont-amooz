@@ -15,6 +15,7 @@ import {
   Plus,
   Search,
   ShieldCheck,
+  TrendingUp,
   User,
   Users,
   Video,
@@ -229,6 +230,12 @@ export function Navbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="h-11 cursor-pointer gap-2 font-bold"
+                  onClick={() => navigate("#/my-learning")}
+                >
+                  <TrendingUp className="size-4" aria-hidden="true" /> پیشرفت من
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="h-11 cursor-pointer gap-2 font-bold"
                   onClick={() => navigate("#/wallet")}
                 >
                   <Wallet className="size-4" aria-hidden="true" /> کیف پول
@@ -402,6 +409,13 @@ export function Navbar() {
                   className="flex h-11 items-center gap-3 border-2 border-transparent px-3 font-bold hover:border-gray-200"
                 >
                   <User className="size-5 text-gold" aria-hidden="true" /> پروفایل من
+                </a>
+                <a
+                  href="#/my-learning"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex h-11 items-center gap-3 border-2 border-transparent px-3 font-bold hover:border-gray-200"
+                >
+                  <TrendingUp className="size-5 text-gold" aria-hidden="true" /> پیشرفت من
                 </a>
                 <a
                   href="#/wallet"

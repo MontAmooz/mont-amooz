@@ -33,6 +33,7 @@ import { PamphletView } from "@/components/edu/pamphlet-view";
 import { ProfileView } from "@/components/edu/profile-view";
 import { ResetConfirmView } from "@/components/edu/reset-view";
 import SubjectView from "@/components/edu/subject-view";
+import StudentDashboardView from "@/components/edu/student-dashboard-view";
 import TeacherAnalyticsView from "@/components/edu/teacher-analytics-view";
 import { WelcomeView } from "@/components/edu/welcome-view";
 import { RequestDetailView } from "@/components/edu/request-detail-view";
@@ -274,6 +275,19 @@ export default function Page() {
         );
       case "subject":
         return <SubjectView key={route.subject} subject={route.subject} />;
+      // ----- P18 — student learning dashboard -----
+      case "my-learning":
+        if (!sessionLoaded) return null;
+        return user ? (
+          <StudentDashboardView />
+        ) : (
+          <div className="mx-auto max-w-7xl px-4 py-16">
+            <AuthRequiredBox
+              title="برای دیدن پیشرفت خود وارد حساب کاربری شوید"
+              hint="پیشرفت درس‌ها، آزمون‌ها، دوره‌ها و کلاس‌های شما اینجا جمع می‌شود."
+            />
+          </div>
+        );
       default:
         return <HomeView params={{}} />;
     }
