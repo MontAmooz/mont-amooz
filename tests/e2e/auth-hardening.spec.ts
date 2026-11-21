@@ -73,6 +73,8 @@ test("#/admin is founder-only: student gets the gate, founder gets the panel", a
   const ap = await pageWithCookie(page.context().browser()!, adminCookie);
   await ap.goto("#/admin");
   await expect(ap.getByRole("heading", { name: "پنل مدیریت" })).toBeVisible({ timeout: 20000 });
+  // P20 — the user table lives in the کاربران tab now
+  await ap.getByRole("tab", { name: "کاربران" }).click();
   await expect(ap.getByText("montajebii@montamooz.ir")).toBeVisible();
   await ap.context().close();
 });

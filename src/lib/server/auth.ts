@@ -93,13 +93,18 @@ export async function getCurrentUser() {
   const store = await cookies();
   const uid = parseSessionToken(store.get(SESSION_COOKIE)?.value);
   if (!uid) return null;
-  return db.user.findUnique({
+  const user = await db.user.findUnique({
     where: { id: uid },
     select: {
       id: true, email: true, fullName: true, title: true, bio: true,
-      expertise: true, role: true, isAdmin: true, createdAt: true, updatedAt: true,
+      expertise: true, role: true, isAdmin: true, suspendedAt: true,
+      createdAt: true, updatedAt: true,
     },
   });
+  // P20 — a suspended user's existing session dies on its next request
+  // (HMAC tokens have no revocation list; the check lives on the user row).
+  if (user?.suspendedAt) return null;
+  return user;
 }
 
 /** Public user shape (no email). */

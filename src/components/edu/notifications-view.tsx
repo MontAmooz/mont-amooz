@@ -4,7 +4,7 @@
 // Filter tabs (همه / خوانده‌نشده), pagination, mark-all-read; each row links
 // to its notification target and marks it read on click.
 
-import { BookOpenCheck, Calendar, CheckCircle, ClipboardCheck, GitMerge, GitPullRequest, MessageCircle, MessageSquare, ShoppingBag, UserPlus } from "lucide-react";
+import { BookOpenCheck, Calendar, CheckCircle, ClipboardCheck, Flag, GitMerge, GitPullRequest, MessageCircle, MessageSquare, ShoppingBag, UserPlus } from "lucide-react";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,8 @@ function NotificationIcon({ type, unread }: { type: string; unread: boolean }) {
       return <MessageSquare className="size-4" aria-hidden="true" />;
     case "COMMENT_RECEIVED":
       return <MessageCircle className="size-4" aria-hidden="true" />;
+    case "ADMIN_REPORT_CREATED":
+      return <Flag className="size-4" aria-hidden="true" />;
     case "SESSION_BOOKED":
       return <Calendar className="size-4" aria-hidden="true" />;
     case "SESSION_COMPLETED":

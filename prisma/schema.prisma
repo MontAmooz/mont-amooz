@@ -22,6 +22,7 @@ model User {
   expertise    String? // comma-separated Persian tags
   role         String   @default("معلم") // معلم | دانش‌آموز | تایپیست | برنامه‌نویس
   isAdmin      Boolean  @default(false) // founder-only admin panel access (P10)
+  suspendedAt  DateTime? // P20 — set = blocked at login; existing sessions die on next request
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -59,6 +60,10 @@ model User {
 
   // P19 — pamphlet Q&A
   pamphletComments PamphletComment[] @relation("PamphletCommentAuthor")
+
+  // P20 — moderation
+  submittedReports Report[] @relation("SubmittedReports")
+  reviewedReports  Report[] @relation("ReviewedReports")
 }
 
 model Pamphlet {
@@ -73,6 +78,7 @@ model Pamphlet {
   difficulty     String // سطح دشواری
   status         String   @default("PUBLISHED")
   forkedFromId   String? // جزوهٔ مبدأ در صورت فورک
+  hiddenAt       DateTime? // P20 — set = excluded from public list; 404 for non-author non-admin
   viewCount      Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -595,4 +601,30 @@ model PamphletComment {
 
   @@index([pamphletId, parentId, createdAt])
   @@index([authorId])
+}
+
+// ===================== P20 — Moderation =====================
+
+// A user-submitted report on a pamphlet or comment (P20). Resolution is
+// separate from action: the admin dismisses or marks ACTION_TAKEN here and
+// separately hides the pamphlet / deletes the comment / suspends the user,
+// keeping the audit trail explicit. Target is polymorphic — no FK.
+model Report {
+  id          String    @id @default(cuid())
+  reporterId  String
+  targetType  String // "pamphlet" | "comment"
+  targetId    String
+  reason      String // "spam" | "copyright" | "inappropriate" | "harassment" | "other"
+  details     String? // ≤500 chars, optional
+  status      String    @default("PENDING") // "PENDING" | "DISMISSED" | "ACTION_TAKEN"
+  reviewedById String?
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  reporter   User  @relation("SubmittedReports", fields: [reporterId], references: [id])
+  reviewedBy User? @relation("ReviewedReports", fields: [reviewedById], references: [id])
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@index([reporterId])
 }

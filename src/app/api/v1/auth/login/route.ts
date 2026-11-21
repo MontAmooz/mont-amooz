@@ -32,6 +32,12 @@ export async function POST(req: Request) {
     return fail("ایمیل یا رمز عبور اشتباه است", 401);
   }
 
+  // P20 — suspended users are locked out at login (checked AFTER password
+  // verification so account state isn't leaked to non-owners).
+  if (user.suspendedAt) {
+    return fail("حساب شما معلق شده است. با مدیر تماس بگیرید", 403);
+  }
+
   // P10 — remember me: 30 days, standard: 24 hours
   const maxAgeSec = body.rememberMe === true ? SESSION_MAX_AGE_REMEMBER : SESSION_MAX_AGE;
   await setSessionCookie(user.id, maxAgeSec);

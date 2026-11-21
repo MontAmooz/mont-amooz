@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { EmptyBox, ErrorBox, InfoNote, InitialsAvatar, PageSkeleton, Spinner } from "./bits";
 import { useFetch } from "./hooks";
 import { MarkdownViewer } from "./markdown-viewer";
+import { ReportDialog } from "./report-dialog";
 import { useEduStore } from "./store";
 
 export function PamphletQA({
@@ -35,6 +36,7 @@ export function PamphletQA({
   );
   const [body, setBody] = useState("");
   const [replyTo, setReplyTo] = useState<PamphletCommentItem | null>(null);
+  const [reportTarget, setReportTarget] = useState<PamphletCommentItem | null>(null);
   const [busy, setBusy] = useState(false);
 
   const data = stats.data;
@@ -143,10 +145,20 @@ export function PamphletQA({
               canReply={!!user && !c.deleted}
               onReply={() => setReplyTo(c)}
               onDeleteById={(id) => void deleteById(id)}
+              onReport={(target) => setReportTarget(target)}
             />
           ))}
         </div>
       ) : null}
+
+      {reportTarget && (
+        <ReportDialog
+          targetType="comment"
+          targetId={reportTarget.id}
+          open={!!reportTarget}
+          onOpenChange={(open) => !open && setReportTarget(null)}
+        />
+      )}
     </div>
   );
 }
@@ -156,15 +168,19 @@ function CommentRow({
   canReply,
   onReply,
   onDeleteById,
+  onReport,
   isReply = false,
 }: {
   comment: PamphletCommentItem;
   canReply: boolean;
   onReply?: () => void;
   onDeleteById: (id: string) => void;
+  onReport?: (target: PamphletCommentItem) => void;
   isReply?: boolean;
 }) {
+  const viewer = useEduStore((s) => s.user);
   const canDelete = !comment.deleted && (comment.isMine || comment.author.isAdmin);
+  const canReport = !!viewer && !comment.isMine && !comment.deleted;
   return (
     <article
       className={cn(
@@ -218,6 +234,15 @@ function CommentRow({
                 حذف
               </button>
             )}
+            {canReport && onReport && (
+              <button
+                type="button"
+                onClick={() => onReport(comment)}
+                className="text-gray-400 hover:text-danger"
+              >
+                گزارش
+              </button>
+            )}
           </div>
         )}
         {comment.replies.length > 0 && (
@@ -228,6 +253,7 @@ function CommentRow({
                 comment={r}
                 canReply={false}
                 onDeleteById={onDeleteById}
+                onReport={onReport}
                 isReply
               />
             ))}

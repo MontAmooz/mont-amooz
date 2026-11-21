@@ -39,6 +39,7 @@ export async function GET(req: Request) {
   // (Persian-normalized search over title/description/subject/chapter/latest content
   // can't be expressed natively in Prisma/SQLite).
   const rows = await db.pamphlet.findMany({
+    where: { hiddenAt: null }, // P20 — admin-hidden pamphlets leave the public list
     include: { ...pamphletSummaryInclude, versions: { select: { versionNumber: true, content: true }, orderBy: { versionNumber: "desc" } } },
   });
 

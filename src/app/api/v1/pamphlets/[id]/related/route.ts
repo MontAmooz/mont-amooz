@@ -17,7 +17,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const [sameSubject, sameGradeMethod] = await Promise.all([
     db.pamphlet.findMany({
-      where: { id: { not: id }, subject: source.subject, status: "PUBLISHED" },
+      where: { id: { not: id }, subject: source.subject, status: "PUBLISHED", hiddenAt: null },
       include: pamphletSummaryInclude,
       orderBy: [{ viewCount: "desc" }, { updatedAt: "desc" }],
       take: 4,
@@ -28,6 +28,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         grade: source.grade,
         teachingMethod: source.teachingMethod,
         status: "PUBLISHED",
+        hiddenAt: null,
       },
       include: pamphletSummaryInclude,
       orderBy: [{ viewCount: "desc" }, { updatedAt: "desc" }],
