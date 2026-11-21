@@ -1,7 +1,7 @@
 // GET /api/v1/pamphlets/[id] — PamphletDetail (increments viewCount)
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/server/auth";
-import { signedDownloadUrl } from "@/lib/server/storage";
+import { signedDownloadUrl, signedHtmlUrl } from "@/lib/server/storage";
 import { fail, ok } from "@/lib/server/http";
 import {
   buildContributors,
@@ -74,6 +74,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       contentType: a.contentType,
       sizeBytes: a.sizeBytes,
       signedUrl: signedDownloadUrl(a.id),
+      htmlUrl: a.contentType === "application/pdf" ? null : signedHtmlUrl(a.id),
       createdAt: a.createdAt.toISOString(),
     })),
     openMergeRequestCount,

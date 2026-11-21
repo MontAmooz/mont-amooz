@@ -5,6 +5,8 @@
 // never needed: the socket service and the gateway.
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from "node:http";
 import net from "node:net";
+import path from "node:path";
+import fs from "node:fs";
 
 const APP_PORT = 3002; // tests/helpers/server.ts TEST_PORT (never 3000/3001)
 const CLASSROOM_PORT = 3005; // E2E classroom (3003 = maintainer's dev service)
@@ -310,4 +312,33 @@ export async function warmApp(baseUrl: string): Promise<void> {
   throw new Error(sawError
     ? "app copy did not compile a healthy shell (font/turbopack race?)"
     : "app copy warm-up timeout");
+}
+
+/**
+ * P17 — sweep every /api/v1 route once so on-demand dev compilation happens
+ * BEFORE browser traffic. Background compiles churn the dev routes manifest
+ * mid-suite and a request racing it gets Next's HTML 404 for an
+ * already-registered route (observed on exams /attempts/[attemptId]/submit
+ * in full E2E runs; solo runs pass). Best-effort GETs: 405/401/404-in-JSON
+ * all prove the route compiled, which is the only goal here.
+ */
+export async function warmApiRoutes(baseUrl: string): Promise<void> {
+  const apiRoot = path.join(process.cwd(), "src", "app", "api", "v1");
+  const paths: string[] = [];
+  (function collect(dir: string, rel: string) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        collect(path.join(dir, entry.name), `${rel}/${entry.name}`);
+      } else if (entry.name === "route.ts") {
+        paths.push(rel === "" ? "/api/v1" : `/api/v1${rel}`);
+      }
+    }
+  })(apiRoot, "");
+  for (const p of paths) {
+    try {
+      await fetch(`${baseUrl}${p}`, { headers: { "X-Forwarded-For": "10.9.9.9" } });
+    } catch {
+      // best-effort — a hiccup here must not fail stack startup
+    }
+  }
 }

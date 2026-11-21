@@ -62,6 +62,12 @@ export function signedDownloadUrl(attachmentId: string, ttlSeconds = 3600): stri
   return `/api/v1/attachments/${attachmentId}/download?exp=${exp}&sig=${sig}`;
 }
 
+/** P17 — same signature contract as the download URL, aimed at the inline
+ * HTML preview. Same exp/sig derivation, so one verify function covers both. */
+export function signedHtmlUrl(attachmentId: string, ttlSeconds = 3600): string {
+  return signedDownloadUrl(attachmentId, ttlSeconds).replace("/download?", "/html?");
+}
+
 export function verifyDownloadSignature(
   attachmentId: string,
   exp: number,

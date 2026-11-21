@@ -35,6 +35,7 @@ import { MarkdownViewer } from "./markdown-viewer";
 import { navigate } from "./router";
 import { RatingStars } from "./rating-stars";
 import { useFetch } from "./hooks";
+import { RelatedPamphlets } from "./related-pamphlets";
 import { useEduStore } from "./store";
 
 /* ---------------- reviews ---------------- */
@@ -632,6 +633,23 @@ export function PamphletView({ id }: { id: string }) {
                     className="h-[800px] w-full"
                     title={a.fileName}
                   />
+                ) : a.htmlUrl ? (
+                  // P17 — Word/Markdown inline preview. Sandboxed: the HTML is
+                  // user content; scripts/forms/same-origin access stay off.
+                  <div>
+                    <div className="flex items-center justify-between border-b-2 border-gray-100 px-4 py-2 text-xs text-gray-500">
+                      <span>پیش‌نمایش از محتوای فایل — برای قالب‌بندی اصلی، فایل را دانلود کنید</span>
+                      <a href={a.signedUrl} download={a.fileName} className="font-bold text-primary hover:underline">
+                        دانلود فایل اصلی
+                      </a>
+                    </div>
+                    <iframe
+                      src={a.htmlUrl}
+                      className="h-[700px] w-full bg-white"
+                      title={`پیش‌نمایش ${a.fileName}`}
+                      sandbox="allow-same-origin"
+                    />
+                  </div>
                 ) : (
                   <p className="p-4 text-xs text-gray-500">
                     پیش‌نمایش این نوع فایل در دسترس نیست؛ برای مشاهده دانلود کنید.
@@ -802,6 +820,9 @@ export function PamphletView({ id }: { id: string }) {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* P17 — content discovery strip (promotional; renders nothing when empty) */}
+      <RelatedPamphlets pamphletId={p.id} enabled />
 
       {/* propose merge dialog */}
       <Dialog open={mrOpen} onOpenChange={setMrOpen}>

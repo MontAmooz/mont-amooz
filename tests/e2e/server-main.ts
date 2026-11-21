@@ -13,7 +13,7 @@
 // per-run random value) — tickets are HMAC-signed by the app copy and verified
 // by the classroom service, so the inherited value is exactly what must match.
 import { startTestServer, stopTestServer } from "../helpers/server";
-import { startGateway, stopGateway, startClassroom, stopClassroom, warmApp } from "./infra";
+import { startGateway, stopGateway, startClassroom, stopClassroom, warmApp, warmApiRoutes } from "./infra";
 import fs from "node:fs";
 
 const READY_FILE = "/tmp/oeg-e2e-ready.txt";
@@ -40,6 +40,8 @@ async function up() {
       // next/font import map is built on first compile and Chromium's parallel
       // subresource storm can hit it mid-build ("queries have exactly one entry").
       await warmApp(baseUrl);
+      // P17 — compile every API route before browser traffic (manifest race)
+      await warmApiRoutes(baseUrl);
 
       const gwUrl = await startGateway();
       // classroom inherits this process's env (incl. the validated env secret)

@@ -12,7 +12,13 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  // CI always retried once; local parity added in P17 — Next 16 dev-mode
+  // route-manifest races (background compiles vs. in-flight requests) hit
+  // ~1-2 tests per full run with a transient HTML 404 on an already-
+  // registered route. A retry re-runs the whole test (fresh exam, fresh
+  // attempt), which the race almost always survives. Deterministic
+  // failures still fail twice and surface.
+  retries: 1,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
   timeout: 45000,
   expect: { timeout: 7000 },

@@ -32,6 +32,8 @@ import { NotificationsView } from "@/components/edu/notifications-view";
 import { PamphletView } from "@/components/edu/pamphlet-view";
 import { ProfileView } from "@/components/edu/profile-view";
 import { ResetConfirmView } from "@/components/edu/reset-view";
+import SubjectView from "@/components/edu/subject-view";
+import TeacherAnalyticsView from "@/components/edu/teacher-analytics-view";
 import { WelcomeView } from "@/components/edu/welcome-view";
 import { RequestDetailView } from "@/components/edu/request-detail-view";
 import { RequestsView } from "@/components/edu/requests-view";
@@ -257,6 +259,21 @@ export default function Page() {
       // ----- P16 — first-login welcome -----
       case "welcome":
         return <WelcomeView />;
+      // ----- P17 — teacher experience & discovery -----
+      case "teacher-analytics":
+        if (!sessionLoaded) return null;
+        return user ? (
+          <TeacherAnalyticsView />
+        ) : (
+          <div className="mx-auto max-w-7xl px-4 py-16">
+            <AuthRequiredBox
+              title="برای دیدن آمار جزوه‌ها وارد حساب کاربری شوید"
+              hint="آمار فقط برای نویسندهٔ جزوه‌ها نمایش داده می‌شود."
+            />
+          </div>
+        );
+      case "subject":
+        return <SubjectView key={route.subject} subject={route.subject} />;
       default:
         return <HomeView params={{}} />;
     }

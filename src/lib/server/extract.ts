@@ -59,3 +59,50 @@ export async function extractText(
     return null;
   }
 }
+
+// ===================== P17 — inline HTML preview =====================
+
+const MAX_HTML = 500_000;
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * HTML for the inline attachment preview (P17). Word goes through mammoth's
+ * convertToHtml; markdown/text render as prewrapped text; PDFs have their own
+ * iframe path and return null here. mammoth never emits <script>/<style>, but
+ * the strip is kept as defense in depth — this HTML is user content.
+ * Best-effort: any failure returns null and the UI falls back to download-only.
+ */
+export async function extractHtml(
+  buffer: Buffer,
+  contentType: string
+): Promise<string | null> {
+  try {
+    if (
+      contentType ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      contentType === "application/msword"
+    ) {
+      const result = await mammoth.convertToHtml({ buffer });
+      let html = result.value;
+      html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+      html = html.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "");
+      html = html.replace(/\son\w+\s*=\s*(['"])[^'"]*\1/gi, "");
+      return html.slice(0, MAX_HTML);
+    }
+    if (contentType === "text/markdown" || contentType === "text/plain") {
+      const text = buffer.toString("utf-8").slice(0, MAX_HTML);
+      return `<pre style="white-space:pre-wrap;font-family:inherit">${escapeHtml(text)}</pre>`;
+    }
+    return null; // PDFs use the iframe path; other types have no HTML form
+  } catch (e) {
+    console.error("extractHtml failed:", e);
+    return null;
+  }
+}
