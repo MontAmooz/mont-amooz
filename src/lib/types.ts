@@ -19,9 +19,11 @@ export interface AdminUserRow {
   fullName: string;
   role: string;
   isAdmin: boolean;
+  suspendedAt: string | null;
   createdAt: string;
   walletBalance: number | null;
   pamphletCount: number;
+  commentCount: number;
   enrollmentCount: number;
 }
 
@@ -703,4 +705,48 @@ export type PamphletCommentItem = {
 export type CommentListResponse = {
   items: PamphletCommentItem[]; // top-level only; replies nested
   total: number; // count of top-level + replies
+};
+
+// ===================== P20 — moderation =====================
+
+export type ReportTargetType = "pamphlet" | "comment";
+export type ReportReason = "spam" | "copyright" | "inappropriate" | "harassment" | "other";
+export type ReportStatus = "PENDING" | "DISMISSED" | "ACTION_TAKEN";
+
+export type ReportItem = {
+  id: string;
+  targetType: ReportTargetType;
+  targetId: string;
+  targetSummary: string; // short preview (pamphlet title or comment body excerpt)
+  targetUrl: string; // "#/pamphlet/[id]" or the pamphlet URL hosting the comment
+  reason: ReportReason;
+  details: string | null;
+  status: ReportStatus;
+  reporter: { id: string; fullName: string };
+  reviewedBy: { id: string; fullName: string } | null;
+  reviewedAt: string | null;
+  createdAt: string;
+};
+
+export type ReportListResponse = {
+  items: ReportItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export type AdminDashboard = {
+  metrics: {
+    totalUsers: number;
+    newUsersLast7Days: number;
+    suspendedUsers: number;
+    totalPamphlets: number;
+    hiddenPamphlets: number;
+    totalComments: number;
+    totalExams: number;
+    totalLessons: number;
+    pendingReports: number;
+  };
+  recentReports: ReportItem[]; // last 5
+  recentSignups: AdminUserRow[]; // last 5
 };

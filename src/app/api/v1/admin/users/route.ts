@@ -26,9 +26,10 @@ export async function GET(req: Request) {
         fullName: true,
         role: true,
         isAdmin: true,
+        suspendedAt: true,
         createdAt: true,
         wallet: { select: { balance: true } },
-        _count: { select: { pamphlets: true, enrollments: true } },
+        _count: { select: { pamphlets: true, pamphletComments: true, enrollments: true } },
       },
     }),
     db.user.count(),
@@ -40,9 +41,11 @@ export async function GET(req: Request) {
     fullName: u.fullName,
     role: u.role,
     isAdmin: u.isAdmin,
+    suspendedAt: u.suspendedAt?.toISOString() ?? null,
     createdAt: u.createdAt.toISOString(),
     walletBalance: u.wallet?.balance ?? null,
     pamphletCount: u._count.pamphlets,
+    commentCount: u._count.pamphletComments,
     enrollmentCount: u._count.enrollments,
   }));
 

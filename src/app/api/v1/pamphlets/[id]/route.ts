@@ -36,6 +36,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   });
   if (!p) return fail("جزوه پیدا نشد", 404);
 
+  // P20 — an admin-hidden pamphlet 404s for everyone except its author and
+  // admins (the author must still see what they published).
+  if (p.hiddenAt && (!user || (user.id !== p.authorId && !user.isAdmin))) {
+    return fail("جزوه پیدا نشد", 404);
+  }
+
   // Fire-and-forget view counter (best-effort).
   void db.pamphlet
     .update({ where: { id }, data: { viewCount: { increment: 1 } } })

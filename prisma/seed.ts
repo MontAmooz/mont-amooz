@@ -12,6 +12,8 @@ const daysAgo = (n: number, hours = 0) =>
 async function main() {
   console.log("🌱 Seeding OpenEdu Git …");
   await db.$transaction([
+    // P20 — moderation reports (reporter/reviewedBy FK → user)
+    db.report.deleteMany(),
     // P19 — pamphlet Q&A (must precede pamphlet/user deletes or re-seeding
     // a dirty DB hits FK P2003 from comments.pamphletId / authorId / parentId)
     db.pamphletComment.deleteMany(),

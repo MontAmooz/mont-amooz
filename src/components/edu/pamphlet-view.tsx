@@ -3,7 +3,7 @@
 // مُنت‌آموز — pamphlet detail view: header, actions (fork/edit/propose-merge),
 // GitHub-style tabs: محتوا / پیوست‌ها / تاریخچه / مشارکت‌کنندگان / بازخوردها / درخواست‌های ادغام.
 
-import { GitMerge, Pencil, Star, ThumbsDown, ThumbsUp, ArrowRight, Eye, GitFork, History, Paperclip, Download, Trash2 } from "lucide-react";
+import { GitMerge, Pencil, Star, ThumbsDown, ThumbsUp, ArrowRight, Eye, Flag, GitFork, History, Paperclip, Download, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ import { RatingStars } from "./rating-stars";
 import { useFetch } from "./hooks";
 import { PamphletQA } from "./pamphlet-qa";
 import { RelatedPamphlets } from "./related-pamphlets";
+import { ReportDialog } from "./report-dialog";
 import { useEduStore } from "./store";
 
 /* ---------------- reviews ---------------- */
@@ -205,6 +206,7 @@ export function PamphletView({ id }: { id: string }) {
   const [mrTitle, setMrTitle] = useState("");
   const [mrDesc, setMrDesc] = useState("");
   const [mrBusy, setMrBusy] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const detail = useFetch<PamphletDetail>(
     () => api<PamphletDetail>(`/pamphlets/${id}`),
@@ -449,7 +451,21 @@ export function PamphletView({ id }: { id: string }) {
         >
           {p.difficulty}
         </span>
+        {user && !p.isMine && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setReportOpen(true)}
+            className="h-7 gap-1 px-2 text-xs font-bold text-gray-400 hover:text-danger"
+          >
+            <Flag className="size-3.5" aria-hidden="true" /> گزارش
+          </Button>
+        )}
       </div>
+
+      {user && !p.isMine && (
+        <ReportDialog targetType="pamphlet" targetId={p.id} open={reportOpen} onOpenChange={setReportOpen} />
+      )}
 
       {/* stats */}
       <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-600">

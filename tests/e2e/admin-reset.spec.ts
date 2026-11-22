@@ -18,6 +18,8 @@ test("admin generates a reset token and sees it in the dialog", async ({ page })
   await p.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   await p.goto("#/admin");
   await expect(p.getByRole("heading", { name: "پنل مدیریت" })).toBeVisible({ timeout: 20000 });
+  // P20 — the user table lives in the کاربران tab now
+  await p.getByRole("tab", { name: "کاربران" }).click();
 
   const row = p.getByRole("row", { name: new RegExp(targetEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) });
   await row.getByRole("button", { name: /بازنشانی رمز/ }).click();
