@@ -616,3 +616,526 @@ describe("progress endpoints", () => {
     expect(note!.linkUrl).toBe(`#/lesson/${created.id}`);
   });
 });
+
+// ===================== P21 — FILL_BLANK / IMAGE / BRANCHING =====================
+
+/** Minimal valid 1×1 PNG (magic bytes survive file-type detection). */
+const TINY_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64"
+);
+
+describe("POST /interactive-lessons — FILL_BLANK validation (P21)", () => {
+  const fillStep = (blanks: unknown[], content = "مشتق $f(x)=x^3$ برابر ___ است.") => ({
+    type: "FILL_BLANK",
+    content,
+    blanks,
+  });
+  const TEXT_INTRO = { type: "TEXT", content: "مقدمهٔ درس جای خالی برای آزمون اعتبارسنجی." };
+
+  test("1 blank valid → 201", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const r = await createLesson(cookie, {
+      steps: [TEXT_INTRO, fillStep([{ correctAnswer: "3x^2" }])],
+    });
+    expect(r.status).toBe(201);
+  });
+
+  test("3 blanks with matching ___ → 201", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const r = await createLesson(cookie, {
+      steps: [
+        TEXT_INTRO,
+        fillStep(
+          [
+            { correctAnswer: "الف" },
+            { correctAnswer: "ب", hint: "راهنمای دوم" },
+            { correctAnswer: "ج", caseSensitive: true },
+          ],
+          "جاهای خالی: ___ و ___ و ___ این‌جاست."
+        ),
+      ],
+    });
+    expect(r.status).toBe(201);
+  });
+
+  test("mismatched ___ count → 400 «تعداد جای خالی با متن هم‌خوانی ندارد»", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const r = await createLesson(cookie, {
+      steps: [TEXT_INTRO, fillStep([{ correctAnswer: "الف" }, { correctAnswer: "ب" }])],
+    });
+    expect(r.status).toBe(400);
+    expect(err(r.data)).toBe("تعداد جای خالی با متن هم‌خوانی ندارد");
+  });
+
+  test("blank with empty correctAnswer → 400", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const r = await createLesson(cookie, {
+      steps: [TEXT_INTRO, fillStep([{ correctAnswer: "   " }])],
+    });
+    expect(r.status).toBe(400);
+    expect(err(r.data)).toBe("پاسخ صحیح هر جای خالی باید بین ۱ تا ۱۰۰ نویسه باشد");
+  });
+
+  test("4 blanks → 400 «حداکثر ۳ جای خالی»", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const r = await createLesson(cookie, {
+      steps: [
+        TEXT_INTRO,
+        fillStep(
+          [
+            { correctAnswer: "۱" },
+            { correctAnswer: "۲" },
+            { correctAnswer: "۳" },
+            { correctAnswer: "۴" },
+          ],
+          "چهار جا: ___ ___ ___ ___"
+        ),
+      ],
+    });
+    expect(r.status).toBe(400);
+    expect(err(r.data)).toBe("حداکثر ۳ جای خالی");
+  });
+});
+
+describe("POST /interactive-lessons — IMAGE validation (P21)", () => {
+  const TEXT_INTRO = { type: "TEXT", content: "مقدمهٔ درس تصویری برای آزمون اعتبارسنجی." };
+  const imageStep = (extra: Record<string, unknown> = {}) => ({
+    type: "IMAGE",
+    content: "## تصویر سلول\n\nتصویر زیر را ببینید.",
+    imageUrl: "/courses/cover-science.png",
+    imageCaption: "شمای آموزشی",
+    ...extra,
+  });
+
+  test("valid imageUrl + caption → 201", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const r = await createLesson(cookie, { steps: [TEXT_INTRO, imageStep()] });
+    expect(r.status).toBe(201);
+  });
+
+  test("missing imageUrl → 400 «آدرس تصویر نامعتبر است»", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const r = await createLesson(cookie, {
+      steps: [TEXT_INTRO, { type: "IMAGE", content: "بدون تصویر در این گام." }],
+    });
+    expect(r.status).toBe(400);
+    expect(err(r.data)).toBe("آدرس تصویر نامعتبر است");
+  });
+
+  test("protocol-relative imageUrl → 400; caption >200 → 400", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const proto = await createLesson(cookie, {
+      steps: [TEXT_INTRO, imageStep({ imageUrl: "//evil.example/x.png" })],
+    });
+    expect(proto.status).toBe(400);
+    expect(err(proto.data)).toBe("آدرس تصویر نامعتبر است");
+
+    const longCaption = await createLesson(cookie, {
+      steps: [TEXT_INTRO, imageStep({ imageCaption: "ط".repeat(201) })],
+    });
+    expect(longCaption.status).toBe(400);
+    expect(err(longCaption.data)).toBe("توضیح تصویر حداکثر ۲۰۰ نویسه است");
+  });
+});
+
+describe("POST /step-images (P21 upload)", () => {
+  test("unauthenticated → 401", async () => {
+    const r = await api(baseUrl(), "/api/v1/step-images", { method: "POST" });
+    expect(r.status).toBe(401);
+  });
+
+  test("student role → 403 «فقط معلم می‌تواند تصویر آپلود کند»", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url, { role: "دانش‌آموز" });
+    const form = new FormData();
+    form.append("file", new Blob([TINY_PNG], { type: "image/png" }), "cell.png");
+    const r = await api(url, "/api/v1/step-images", { method: "POST", cookie, body: form });
+    expect(r.status).toBe(403);
+    expect(err(r.data)).toBe("فقط معلم می‌تواند تصویر آپلود کند");
+  });
+
+  test("declared type not allowed (pdf) → 400 «فقط PNG، JPG، WebP و GIF»", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const form = new FormData();
+    form.append(
+      "file",
+      new Blob([Buffer.from("%PDF-1.4 fake")], { type: "application/pdf" }),
+      "doc.pdf"
+    );
+    const r = await api(url, "/api/v1/step-images", { method: "POST", cookie, body: form });
+    expect(r.status).toBe(400);
+    expect(err(r.data)).toBe("فقط PNG، JPG، WebP و GIF");
+  });
+
+  test("oversized (>5MB) → 400 «حجم تصویر حداکثر ۵ مگابایت است»", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const big = Buffer.concat([TINY_PNG, Buffer.alloc(5 * 1024 * 1024 + 1, 0)]);
+    const form = new FormData();
+    form.append("file", new Blob([big], { type: "image/png" }), "big.png");
+    const r = await api(url, "/api/v1/step-images", { method: "POST", cookie, body: form });
+    expect(r.status).toBe(400);
+    expect(err(r.data)).toBe("حجم تصویر حداکثر ۵ مگابایت است");
+  });
+
+  test("valid PNG → 201 {url}; GET url → 200 image bytes with immutable cache", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const form = new FormData();
+    form.append("file", new Blob([TINY_PNG], { type: "image/png" }), "cell.png");
+    const r = await api<{ url: string }>(url, "/api/v1/step-images", {
+      method: "POST",
+      cookie,
+      body: form,
+    });
+    expect(r.status).toBe(201);
+    expect(r.data.url).toMatch(/^\/api\/v1\/step-images\/[0-9a-f-]{36}\.png$/);
+
+    const served = await api(baseUrl(), r.data.url);
+    expect(served.status).toBe(200);
+    expect(served.headers.get("content-type")).toBe("image/png");
+    expect(served.headers.get("cache-control")).toContain("immutable");
+    const bytes = Buffer.from(await (await fetch(`${baseUrl()}${r.data.url}`)).arrayBuffer());
+    expect(bytes.subarray(1, 4).toString("latin1")).toBe("PNG");
+  });
+
+  test("traversal-style key → 404", async () => {
+    const r = await api(baseUrl(), "/api/v1/step-images/..%2F..%2F.env");
+    expect(r.status).toBe(404);
+  });
+});
+
+describe("P21 — BRANCHING create + detail", () => {
+  const TEXT_INTRO = { type: "TEXT", content: "مقدمهٔ درس شرطی برای آزمون." };
+
+  test("nextOnCorrectIndex → 201; detail exposes { id, order } to owner and student", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const r = await createLesson(cookie, {
+      published: true,
+      steps: [
+        TEXT_INTRO,
+        {
+          type: "MC",
+          content: "سؤال شرطی؟",
+          options: [{ text: "الف" }, { text: "ب" }],
+          correctOptionIndex: 0,
+          nextOnCorrectIndex: 3,
+          nextOnWrongIndex: 2,
+        },
+        { type: "TEXT", content: "گام توضیحی برای مسیر غلط." },
+        { type: "TEXT", content: "گام پایانی." },
+      ],
+    });
+    expect(r.status).toBe(201);
+
+    const owner = await api<{
+      steps: Array<{ nextOnCorrect: { id: string; order: number } | null; nextOnWrong: { id: string; order: number } | null }>;
+    }>(url, `/api/v1/interactive-lessons/${r.data.id}`, { cookie });
+    expect(owner.status).toBe(200);
+    expect(owner.data.steps[1].nextOnCorrect?.order).toBe(3);
+    expect(owner.data.steps[1].nextOnWrong?.order).toBe(2);
+    expect(owner.data.steps[0].nextOnCorrect).toBeNull();
+
+    const student = await api<{ steps: Array<{ nextOnCorrect: { order: number } | null }> }>(
+      url,
+      `/api/v1/interactive-lessons/${r.data.id}`
+    );
+    expect(student.data.steps[1].nextOnCorrect?.order).toBe(3);
+  });
+
+  test("nextOnCorrectIndex out of range → 400 «گام مرجع نامعتبر است»", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const r = await createLesson(cookie, {
+      steps: [
+        TEXT_INTRO,
+        {
+          type: "MC",
+          content: "سؤال؟",
+          options: [{ text: "الف" }, { text: "ب" }],
+          correctOptionIndex: 0,
+          nextOnCorrectIndex: 7,
+        },
+      ],
+    });
+    expect(r.status).toBe(400);
+    expect(err(r.data)).toBe("گام مرجع نامعتبر است");
+  });
+
+  test("self-loop target → 400 «گام مرجع نامعتبر است»", async () => {
+    const url = await baseUrl();
+    const { cookie } = await registerUser(url);
+    const r = await createLesson(cookie, {
+      steps: [
+        TEXT_INTRO,
+        {
+          type: "MC",
+          content: "سؤال؟",
+          options: [{ text: "الف" }, { text: "ب" }],
+          correctOptionIndex: 0,
+          nextOnCorrectIndex: 1,
+        },
+      ],
+    });
+    expect(r.status).toBe(400);
+    expect(err(r.data)).toBe("گام مرجع نامعتبر است");
+  });
+});
+
+describe("P21 — FILL_BLANK advance", () => {
+  async function makeFillLesson(published = true) {
+    const url = await baseUrl();
+    const teacher = await registerUser(url);
+    const { data: created } = await createLesson(teacher.cookie, {
+      published,
+      steps: [
+        { type: "TEXT", content: "مقدمهٔ درس جای خالی." },
+        {
+          type: "FILL_BLANK",
+          content: "مشتق تابع برابر ___ است و شکل دوم ___ نام دارد.",
+          blanks: [
+            { correctAnswer: "3x^2", hint: "قاعدهٔ توان" },
+            { correctAnswer: "Sine", caseSensitive: true },
+          ],
+          explanation: "با قاعدهٔ توان دوباره تلاش کنید.",
+        },
+      ],
+    });
+    const detail = await api<{
+      steps: Array<{ blanks: { id: string; caseSensitive: boolean }[] | null }>;
+    }>(url, `/api/v1/interactive-lessons/${created.id}`, { cookie: teacher.cookie });
+    const blankIds = detail.data.steps[1].blanks!.map((b) => b.id);
+    return { url, teacher, created, detail, blankIds };
+  }
+
+  test("all blanks correct → advance", async () => {
+    const { url, teacher, created, blankIds } = await makeFillLesson();
+    const [b1, b2] = blankIds;
+    const r = await advance(teacher.cookie, created.id, 0, null);
+    expect(r.data.correct).toBe(true);
+    const r2 = await advance(teacher.cookie, created.id, 1, JSON.stringify({ [b1]: "3x^2", [b2]: "Sine" }));
+    expect(r2.status).toBe(200);
+    expect(r2.data.correct).toBe(true);
+    expect(r2.data.completed).toBe(true);
+  });
+
+  test("one blank wrong → correct: false, explanation, no advance", async () => {
+    const { url, teacher, created, blankIds } = await makeFillLesson();
+    const [b1, b2] = blankIds;
+    await advance(teacher.cookie, created.id, 0, null);
+    const r2 = await advance(teacher.cookie, created.id, 1, JSON.stringify({ [b1]: "x^3", [b2]: "Sine" }));
+    expect(r2.data.correct).toBe(false);
+    expect(r2.data.explanation).toBeTruthy();
+    expect(r2.data.currentStep).toBe(1);
+    expect(r2.data.completed).toBe(false);
+  });
+
+  test("case-insensitive by default → different case accepted", async () => {
+    const url = await baseUrl();
+    const teacher = await registerUser(url);
+    const { data: created } = await createLesson(teacher.cookie, {
+      published: true,
+      steps: [
+        { type: "TEXT", content: "مقدمهٔ درس جای خالی." },
+        {
+          type: "FILL_BLANK",
+          content: "پاسخ ___ است.",
+          blanks: [{ correctAnswer: "Sine", caseSensitive: false }],
+        },
+      ],
+    });
+    const detail = await api<{ steps: Array<{ blanks: { id: string }[] | null }> }>(
+      url,
+      `/api/v1/interactive-lessons/${created.id}`,
+      { cookie: teacher.cookie }
+    );
+    const [b1] = detail.data.steps[1].blanks!.map((b) => b.id);
+    await advance(teacher.cookie, created.id, 0, null);
+    const r = await advance(teacher.cookie, created.id, 1, JSON.stringify({ [b1]: "SINE" }));
+    expect(r.data.correct).toBe(true);
+  });
+
+  test("caseSensitive: true rejects different case", async () => {
+    const { url, teacher, created, blankIds } = await makeFillLesson();
+    const [b1, b2] = blankIds;
+    await advance(teacher.cookie, created.id, 0, null);
+    const r = await advance(teacher.cookie, created.id, 1, JSON.stringify({ [b1]: "3x^2", [b2]: "sine" }));
+    expect(r.data.correct).toBe(false); // b2 IS case-sensitive → "sine" ≠ "Sine"
+  });
+
+  test("whitespace collapse («3 x^2» == «3x^2»)", async () => {
+    const { url, teacher, created, blankIds } = await makeFillLesson();
+    const [b1, b2] = blankIds;
+    await advance(teacher.cookie, created.id, 0, null);
+    const r = await advance(teacher.cookie, created.id, 1, JSON.stringify({ [b1]: "3 x^2", [b2]: "Sine" }));
+    expect(r.data.correct).toBe(true);
+  });
+
+  test("malformed JSON answer → correct: false", async () => {
+    const { url, teacher, created } = await makeFillLesson();
+    await advance(teacher.cookie, created.id, 0, null);
+    const r = await advance(teacher.cookie, created.id, 1, "{not json");
+    expect(r.data.correct).toBe(false);
+  });
+
+  test("Persian-digit answers normalize («۳x^2» == «3x^2»)", async () => {
+    const { url, teacher, created, blankIds } = await makeFillLesson();
+    const [b1, b2] = blankIds;
+    await advance(teacher.cookie, created.id, 0, null);
+    const r = await advance(teacher.cookie, created.id, 1, JSON.stringify({ [b1]: "۳x^2", [b2]: "Sine" }));
+    expect(r.data.correct).toBe(true);
+  });
+});
+
+describe("P21 — IMAGE advance", () => {
+  test("always correct like TEXT; does not inflate attempt stats", async () => {
+    const url = await baseUrl();
+    const teacher = await registerUser(url);
+    const student = await registerUser(url);
+    const { data: created } = await createLesson(teacher.cookie, {
+      published: true,
+      steps: [
+        { type: "IMAGE", content: "## تصویر\n\nببینید.", imageUrl: "/courses/cover-science.png", imageCaption: "شمای" },
+        {
+          type: "MC",
+          content: "سؤال پایانی؟",
+          options: [{ text: "الف" }, { text: "ب" }],
+          correctOptionIndex: 1,
+        },
+      ],
+    });
+    const detail = await api<{ steps: Array<{ correctOptionId: string | null }> }>(
+      url,
+      `/api/v1/interactive-lessons/${created.id}`,
+      { cookie: teacher.cookie }
+    );
+
+    const r1 = await advance(student.cookie, created.id, 0, null);
+    expect(r1.data.correct).toBe(true);
+    expect(r1.data.currentStep).toBe(1);
+
+    const r2 = await advance(student.cookie, created.id, 1, detail.data.steps[1].correctOptionId!);
+    expect(r2.data.completed).toBe(true);
+    // summary counts only the graded step (IMAGE excluded, like TEXT)
+    expect(r2.data.summary?.totalSteps).toBe(1);
+    expect(r2.data.summary?.firstTryCorrect).toBe(1);
+    expect(r2.data.summary?.totalAttempts).toBe(1);
+  });
+});
+
+describe("P21 — BRANCHING advance", () => {
+  /** MC(0) onCorrect→3 / onWrong→2 · TEXT(1) unused · TEXT explanation(2) onCorrect→0 · NUMERIC(3) last */
+  async function makeBranchLesson() {
+    const url = await baseUrl();
+    const teacher = await registerUser(url);
+    const { data: created } = await createLesson(teacher.cookie, {
+      published: true,
+      steps: [
+        {
+          type: "MC",
+          content: "کار نیرو عمود بر جابه‌جایی چقدر است؟",
+          options: [{ text: "بیشینه" }, { text: "صفر" }],
+          correctOptionIndex: 1,
+          nextOnCorrectIndex: 3,
+          nextOnWrongIndex: 2,
+        },
+        { type: "TEXT", content: "گام میانی (مسیر عادی)." },
+        { type: "TEXT", content: "## چرا صفر؟\n\nتوضیح cos90 — حالا برگرد.", nextOnCorrectIndex: 0 },
+        { type: "NUMERIC", content: "K جسم ۲ کیلو با v=۳؟", correctNumeric: 9, tolerance: 0.1 },
+      ],
+    });
+    const detail = await ownerDetail(teacher.cookie, created.id);
+    return { url, teacher, created, detail };
+  }
+
+  test("correct + nextOnCorrect → jumps to target (skips remediation step)", async () => {
+    const { url, teacher, created, detail } = await makeBranchLesson();
+    const r = await advance(teacher.cookie, created.id, 0, detail.steps[0].correctOptionId!);
+    expect(r.data.correct).toBe(true);
+    expect(r.data.currentStep).toBe(3); // NOT 1 — jumped over the sequential step
+  });
+
+  test("wrong + nextOnWrong → jumps to the remediation step", async () => {
+    const { url, teacher, created, detail } = await makeBranchLesson();
+    const wrongOption = detail.steps[0].options!.find((o) => o.id !== detail.steps[0].correctOptionId)!.id;
+    const r = await advance(teacher.cookie, created.id, 0, wrongOption);
+    expect(r.data.correct).toBe(false);
+    expect(r.data.currentStep).toBe(2); // remediation step
+    expect(r.data.completed).toBe(false);
+  });
+
+  test("remediation TEXT advances via its nextOnCorrect back to the question", async () => {
+    const { url, teacher, created } = await makeBranchLesson();
+    // drive + read progress as a STUDENT — the owner shape carries no `progress`
+    const student = await registerUser(url);
+    await advance(student.cookie, created.id, 0, "wrong-option-id");
+    const detail = await api<{ progress: { currentStep: number } | null }>(
+      url,
+      `/api/v1/interactive-lessons/${created.id}`,
+      { cookie: student.cookie }
+    );
+    expect(detail.data.progress?.currentStep).toBe(2);
+    const back = await advance(student.cookie, created.id, 2, null);
+    expect(back.data.correct).toBe(true);
+    expect(back.data.currentStep).toBe(0); // looped back to the question
+  });
+
+  test("wrong + no nextOnWrong → retry same step", async () => {
+    const url = await baseUrl();
+    const teacher = await registerUser(url);
+    const { data: created } = await createLesson(teacher.cookie, {
+      published: true,
+      steps: [
+        { type: "TEXT", content: "مقدمهٔ درس بدون انشعاب." },
+        {
+          type: "MC",
+          content: "سؤال؟",
+          options: [{ text: "الف" }, { text: "ب" }],
+          correctOptionIndex: 0,
+        },
+      ],
+    });
+    const detail = await ownerDetail(teacher.cookie, created.id);
+    await advance(teacher.cookie, created.id, 0, null);
+    const wrong = detail.steps[1].options!.find((o) => o.id !== detail.steps[1].correctOptionId)!.id;
+    const r = await advance(teacher.cookie, created.id, 1, wrong);
+    expect(r.data.correct).toBe(false);
+    expect(r.data.currentStep).toBe(1); // stayed
+  });
+
+  test("branch target completing the lesson → completed: true", async () => {
+    const url = await baseUrl();
+    const teacher = await registerUser(url);
+    const { data: created } = await createLesson(teacher.cookie, {
+      published: true,
+      steps: [
+        {
+          type: "MC",
+          content: "سؤال؟",
+          options: [{ text: "الف" }, { text: "ب" }],
+          correctOptionIndex: 0,
+          nextOnCorrectIndex: 2,
+        },
+        { type: "TEXT", content: "گام میانی." },
+        { type: "TEXT", content: "گام پایانی." },
+      ],
+    });
+    const detail = await ownerDetail(teacher.cookie, created.id);
+    const r1 = await advance(teacher.cookie, created.id, 0, detail.steps[0].correctOptionId!);
+    expect(r1.data.currentStep).toBe(2);
+    const r2 = await advance(teacher.cookie, created.id, 2, null);
+    expect(r2.data.completed).toBe(true);
+    expect(r2.data.summary?.totalSteps).toBe(1); // only the MC is graded
+  });
+});

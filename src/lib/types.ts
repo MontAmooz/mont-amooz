@@ -488,9 +488,16 @@ export interface UserProfileTeach {
 
 // ===================== P15 — Interactive Learning =====================
 
-export type InteractiveStepType = "TEXT" | "MC" | "NUMERIC";
+export type InteractiveStepType = "TEXT" | "MC" | "NUMERIC" | "FILL_BLANK" | "IMAGE";
 
 export type StepOption = { id: string; text: string };
+
+/** FILL_BLANK — a blank as the STUDENT sees it (correctAnswer stripped; P21). */
+export type FillBlankSpec = {
+  id: string;
+  hint?: string;
+  caseSensitive: boolean;
+};
 
 /** A step as a student sees it — correct answers are NEVER included. */
 export type InteractiveStepStudent = {
@@ -501,11 +508,22 @@ export type InteractiveStepStudent = {
   options: StepOption[] | null; // MC only
   tolerance: number | null; // NUMERIC only
   explanation: string | null; // shown after a wrong answer
+  // P21 — FILL_BLANK (correctAnswer stripped; graded per-blank, all-or-nothing)
+  blanks: FillBlankSpec[] | null;
+  // P21 — IMAGE
+  imageUrl: string | null;
+  imageCaption: string | null;
+  // P21 — branching targets as { id, order } (flow control, not an answer leak;
+  // null = sequential advance / retry same step)
+  nextOnCorrect: { id: string; order: number } | null;
+  nextOnWrong: { id: string; order: number } | null;
 };
 
 export type InteractiveStepTeacher = InteractiveStepStudent & {
   correctOptionId: string | null; // MC only
   correctNumeric: number | null; // NUMERIC only
+  // P21 — FILL_BLANK answers for the owner
+  blankAnswers: { id: string; correctAnswer: string; caseSensitive: boolean }[] | null;
 };
 
 export type LessonSummary = {
@@ -553,21 +571,22 @@ export type LessonDetail = LessonDetailTeacher | LessonDetailStudent;
 
 export type AdvanceResult =
   | {
-      // wrong answer — stay on the current step
+      // wrong answer — cursor stays on the step (retry) unless the step has a
+      // nextOnWrong branch, in which case currentStep names the jump target
       correct: false;
       explanation: string | null;
       currentStep: number;
       completed: false;
     }
   | {
-      // correct — advance (may complete)
+      // correct — advance (sequential or via nextOnCorrect branch; may complete)
       correct: true;
       explanation: string | null;
       currentStep: number; // new current step (or unchanged when completed)
       completed: boolean;
-      /** present only when the lesson just completed; MC/NUMERIC graded steps */
+      /** present only when the lesson just completed; graded steps (MC + NUMERIC + FILL_BLANK) */
       summary?: {
-        totalSteps: number; // graded steps (MC + NUMERIC)
+        totalSteps: number; // graded steps (not TEXT/IMAGE — they have no answer)
         firstTryCorrect: number;
         totalAttempts: number;
       };

@@ -576,20 +576,52 @@ export function parseExamQuestions(
 
 // ===================== P15 — Interactive Learning =====================
 
+/** A stored blank as it lives in the step's blanks JSON (owner-only fields). */
+export type StoredBlank = {
+  id: string;
+  correctAnswer: string;
+  hint?: string;
+  caseSensitive?: boolean;
+};
+
 export type InteractiveStepRow = {
   id: string;
   order: number;
-  type: string; // "TEXT" | "MC" | "NUMERIC"
+  type: string; // "TEXT" | "MC" | "NUMERIC" | "FILL_BLANK" | "IMAGE"
   content: string;
   options: string | null; // JSON [{id, text}] — MC only
   correctOptionId: string | null;
   correctNumeric: number | null;
   tolerance: number | null;
+  blanks: string | null; // JSON [{id, correctAnswer, hint?, caseSensitive?}] — FILL_BLANK only
+  imageUrl: string | null; // IMAGE only
+  imageCaption: string | null; // IMAGE only
   explanation: string | null;
+  // P21 — resolved branch targets (relation include; null = sequential/retry)
+  nextOnCorrect: { id: string; order: number } | null;
+  nextOnWrong: { id: string; order: number } | null;
 };
+
+/** Parse a step row's blanks JSON (defensive against malformed data). */
+export function stepBlanks(row: Pick<InteractiveStepRow, "blanks">): StoredBlank[] {
+  if (!row.blanks) return [];
+  try {
+    const parsed: unknown = JSON.parse(row.blanks);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (b): b is StoredBlank =>
+        !!b && typeof b === "object" &&
+        typeof (b as StoredBlank).id === "string" &&
+        typeof (b as StoredBlank).correctAnswer === "string"
+    );
+  } catch {
+    return [];
+  }
+}
 
 /** Map a step row to the teacher shape (includes the correct answers). */
 export function toInteractiveStepTeacher(row: InteractiveStepRow): InteractiveStepTeacher {
+  const blanks = row.type === "FILL_BLANK" ? stepBlanks(row) : null;
   return {
     id: row.id,
     order: row.order,
@@ -600,11 +632,22 @@ export function toInteractiveStepTeacher(row: InteractiveStepRow): InteractiveSt
     explanation: row.explanation,
     correctOptionId: row.correctOptionId,
     correctNumeric: row.correctNumeric,
+    blanks: blanks
+      ? blanks.map((b) => ({ id: b.id, ...(b.hint ? { hint: b.hint } : {}), caseSensitive: b.caseSensitive ?? false }))
+      : null,
+    imageUrl: row.imageUrl,
+    imageCaption: row.imageCaption,
+    nextOnCorrect: row.nextOnCorrect ? { id: row.nextOnCorrect.id, order: row.nextOnCorrect.order } : null,
+    nextOnWrong: row.nextOnWrong ? { id: row.nextOnWrong.id, order: row.nextOnWrong.order } : null,
+    blankAnswers: blanks
+      ? blanks.map((b) => ({ id: b.id, correctAnswer: b.correctAnswer, caseSensitive: b.caseSensitive ?? false }))
+      : null,
   };
 }
 
-/** Map a step row to the student shape — correctOptionId/correctNumeric stripped. */
+/** Map a step row to the student shape — correct answers stripped. */
 export function toInteractiveStepStudent(row: InteractiveStepRow): InteractiveStepStudent {
+  const blanks = row.type === "FILL_BLANK" ? stepBlanks(row) : null;
   return {
     id: row.id,
     order: row.order,
@@ -613,21 +656,42 @@ export function toInteractiveStepStudent(row: InteractiveStepRow): InteractiveSt
     options: row.type === "MC" ? examQuestionOptions(row) : null,
     tolerance: row.tolerance,
     explanation: row.explanation,
+    blanks: blanks
+      ? blanks.map((b) => ({ id: b.id, ...(b.hint ? { hint: b.hint } : {}), caseSensitive: b.caseSensitive ?? false }))
+      : null,
+    imageUrl: row.imageUrl,
+    imageCaption: row.imageCaption,
+    nextOnCorrect: row.nextOnCorrect ? { id: row.nextOnCorrect.id, order: row.nextOnCorrect.order } : null,
+    nextOnWrong: row.nextOnWrong ? { id: row.nextOnWrong.id, order: row.nextOnWrong.order } : null,
   };
 }
 
 export type ParsedLessonStep = {
-  type: "TEXT" | "MC" | "NUMERIC";
+  type: "TEXT" | "MC" | "NUMERIC" | "FILL_BLANK" | "IMAGE";
   content: string;
   options: StepOption[] | null; // MC only
   correctOptionId: string | null;
   correctNumeric: number | null;
   tolerance: number | null;
+  blanks: StoredBlank[] | null; // FILL_BLANK only
+  imageUrl: string | null; // IMAGE only
+  imageCaption: string | null;
   explanation: string | null;
+  // P21 — branch targets as indices into the steps array (ids don't exist yet
+  // on the server); resolved to step ids in a second pass after creation
+  nextOnCorrectIndex: number | null;
+  nextOnWrongIndex: number | null;
 };
 
+/** Count the ___ placeholders in a FILL_BLANK content (2+ underscores each —
+ * students/teachers can't be trusted to type exactly three; P21 hatch #1). */
+export function countBlanks(content: string): number {
+  return content.split(/_{2,}/).length - 1;
+}
+
 /** Validate an interactive-lesson steps payload → normalized rows, or a Persian error.
- * Client sends correctOptionIndex for MC; option ids are generated server-side. */
+ * Client sends correctOptionIndex for MC and branch targets as step indices;
+ * option ids and branch step ids are generated/resolved server-side. */
 export function parseInteractiveSteps(raw: unknown): ParsedLessonStep[] | string {
   if (!Array.isArray(raw) || raw.length < 2 || raw.length > 40) {
     return "درس باید بین ۲ تا ۴۰ گام داشته باشد";
@@ -635,6 +699,7 @@ export function parseInteractiveSteps(raw: unknown): ParsedLessonStep[] | string
 
   const out: ParsedLessonStep[] = [];
   for (const s of raw) {
+    const index = out.length;
     if (!s || typeof s !== "object") return "داده‌های گام نامعتبر است";
     const item = s as Record<string, unknown>;
     const content = typeof item.content === "string" ? item.content.trim() : "";
@@ -648,9 +713,28 @@ export function parseInteractiveSteps(raw: unknown): ParsedLessonStep[] | string
       if (e.length > 2000) return "توضیح گام حداکثر ۲۰۰۰ نویسه است";
       explanation = e || null;
     }
+    // P21 — branch targets as step indices (any type may carry them). A target
+    // must be another step of THIS payload: out of range or self-loop → error.
+    const parseBranchIndex = (v: unknown): number | null | "invalid" => {
+      if (v === undefined || v === null) return null;
+      if (typeof v !== "number" || !Number.isInteger(v) || v < 0 || v >= raw.length || v === index) {
+        return "invalid";
+      }
+      return v;
+    };
+    const nextOnCorrectIndex = parseBranchIndex(item.nextOnCorrectIndex);
+    const nextOnWrongIndex = parseBranchIndex(item.nextOnWrongIndex);
+    if (nextOnCorrectIndex === "invalid" || nextOnWrongIndex === "invalid") {
+      return "گام مرجع نامعتبر است";
+    }
 
     if (item.type === "TEXT") {
-      out.push({ type: "TEXT", content, options: null, correctOptionId: null, correctNumeric: null, tolerance: null, explanation });
+      out.push({
+        type: "TEXT", content, options: null, correctOptionId: null, correctNumeric: null,
+        tolerance: null, blanks: null, imageUrl: null, imageCaption: null, explanation,
+        nextOnCorrectIndex,
+        nextOnWrongIndex,
+      });
       continue;
     }
 
@@ -680,7 +764,10 @@ export function parseInteractiveSteps(raw: unknown): ParsedLessonStep[] | string
       const options: StepOption[] = optionTexts.map((t) => ({ id: crypto.randomUUID(), text: t }));
       out.push({
         type: "MC", content, options, correctOptionId: options[correctIndex].id,
-        correctNumeric: null, tolerance: null, explanation,
+        correctNumeric: null, tolerance: null, blanks: null, imageUrl: null, imageCaption: null,
+        explanation,
+        nextOnCorrectIndex,
+        nextOnWrongIndex,
       });
       continue;
     }
@@ -698,12 +785,74 @@ export function parseInteractiveSteps(raw: unknown): ParsedLessonStep[] | string
       }
       out.push({
         type: "NUMERIC", content, options: null, correctOptionId: null,
-        correctNumeric: item.correctNumeric, tolerance, explanation,
+        correctNumeric: item.correctNumeric, tolerance, blanks: null, imageUrl: null,
+        imageCaption: null, explanation,
+        nextOnCorrectIndex,
+        nextOnWrongIndex,
       });
       continue;
     }
 
-    return "نوع گام باید «متن»، «چندگزینه‌ای» یا «عددی» باشد";
+    if (item.type === "FILL_BLANK") {
+      if (!Array.isArray(item.blanks) || item.blanks.length < 1) {
+        return "هر گام جای‌خالی باید بین ۱ تا ۳ جای خالی داشته باشد";
+      }
+      if (item.blanks.length > 3) return "حداکثر ۳ جای خالی";
+      const stored: StoredBlank[] = [];
+      for (const b of item.blanks) {
+        const obj = b as Record<string, unknown> | null;
+        const correctAnswer = typeof obj?.correctAnswer === "string" ? obj.correctAnswer.trim() : "";
+        if (correctAnswer.length < 1 || correctAnswer.length > 100) {
+          return "پاسخ صحیح هر جای خالی باید بین ۱ تا ۱۰۰ نویسه باشد";
+        }
+        let hint: string | undefined;
+        if (obj?.hint !== undefined && obj.hint !== null) {
+          if (typeof obj.hint !== "string" || obj.hint.trim().length > 200) {
+            return "راهنمای جای خالی حداکثر ۲۰۰ نویسه است";
+          }
+          hint = obj.hint.trim() || undefined;
+        }
+        const caseSensitive = obj?.caseSensitive === true;
+        stored.push({ id: crypto.randomUUID(), correctAnswer, ...(hint ? { hint } : {}), caseSensitive });
+      }
+      // content must carry exactly as many ___ markers as blanks
+      if (countBlanks(content) !== stored.length) {
+        return "تعداد جای خالی با متن هم‌خوانی ندارد";
+      }
+      out.push({
+        type: "FILL_BLANK", content, options: null, correctOptionId: null,
+        correctNumeric: null, tolerance: null, blanks: stored, imageUrl: null,
+        imageCaption: null, explanation,
+        nextOnCorrectIndex,
+        nextOnWrongIndex,
+      });
+      continue;
+    }
+
+    if (item.type === "IMAGE") {
+      const imageUrl = typeof item.imageUrl === "string" ? item.imageUrl.trim() : "";
+      // root-relative path only — a bare "/" prefix rule keeps protocol-relative
+      // URLs (//evil.example) and absolute http(s) URLs out
+      if (!imageUrl || !imageUrl.startsWith("/") || imageUrl.startsWith("//")) {
+        return "آدرس تصویر نامعتبر است";
+      }
+      let imageCaption: string | null = null;
+      if (item.imageCaption !== undefined && item.imageCaption !== null) {
+        if (typeof item.imageCaption !== "string") return "داده‌های گام نامعتبر است";
+        const c = item.imageCaption.trim();
+        if (c.length > 200) return "توضیح تصویر حداکثر ۲۰۰ نویسه است";
+        imageCaption = c || null;
+      }
+      out.push({
+        type: "IMAGE", content, options: null, correctOptionId: null, correctNumeric: null,
+        tolerance: null, blanks: null, imageUrl, imageCaption, explanation,
+        nextOnCorrectIndex,
+        nextOnWrongIndex,
+      });
+      continue;
+    }
+
+    return "نوع گام باید «متن»، «چندگزینه‌ای»، «عددی»، «جای خالی» یا «تصویر» باشد";
   }
   return out;
 }

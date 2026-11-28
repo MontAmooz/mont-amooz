@@ -38,6 +38,16 @@ export function faRelative(iso: string | Date): string {
   return faDate(d);
 }
 
+/** Convert Persian/Arabic digits to Latin, keeping case intact — unlike
+ * normalizePersian (which lowercases), this is safe for answers where case
+ * matters (FILL_BLANK comparison, P21). */
+export function faDigitsToLatin(text: string): string {
+  return text.replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (d) => {
+    const c = d.charCodeAt(0);
+    return String(c >= 0x06F0 ? c - 0x06F0 : c - 0x0660);
+  });
+}
+
 /** Normalize Persian text for search: unify ی/ك, strip ZWNJ & diacritics, lowercase. */
 export function normalizePersian(text: string): string {
   return text
