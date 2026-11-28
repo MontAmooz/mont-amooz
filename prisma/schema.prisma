@@ -537,18 +537,33 @@ model InteractiveLesson {
 // One step of an interactive lesson. type="MC" carries options JSON +
 // correctOptionId; type="NUMERIC" carries correctNumeric + tolerance;
 // type="TEXT" is read-only content (no answer to grade).
+// P21: type="FILL_BLANK" carries blanks JSON (1-3, per-blank answers);
+// type="IMAGE" is read-only content with imageUrl + optional caption;
+// nextOnCorrect/nextOnWrong point at sibling steps for remediation paths
+// (null = sequential advance / retry-same-step).
 model InteractiveStep {
   id              String   @id @default(cuid())
   lessonId        String
   order           Int // 0-indexed, matches progress.currentStep
-  type            String // "TEXT" | "MC" | "NUMERIC"
-  content         String // TEXT: markdown; MC/NUMERIC: question text (markdown)
+  type            String // "TEXT" | "MC" | "NUMERIC" | "FILL_BLANK" | "IMAGE"
+  content         String // TEXT/IMAGE: markdown; MC/NUMERIC/FILL_BLANK: question text (markdown)
   options         String? // MC only: JSON array [{ id, text }]
   correctOptionId String? // MC only
   correctNumeric  Float? // NUMERIC only
   tolerance       Float? // NUMERIC only, default 0
+  blanks          String? // FILL_BLANK only: JSON [{ id, correctAnswer, hint?, caseSensitive? }] (1-3)
+  imageUrl        String? // IMAGE only: /api/v1/step-images/<key> or a static /… asset path
+  imageCaption    String? // IMAGE only, ≤200 chars
   explanation     String? // shown on wrong answer; may contain markdown
   createdAt       DateTime @default(now())
+
+  // P21 — branching: null = sequential advance (correct) / retry same step (wrong)
+  nextOnCorrectId String?
+  nextOnWrongId   String?
+  nextOnCorrect    InteractiveStep?  @relation("StepBranchCorrect", fields: [nextOnCorrectId], references: [id], onDelete: SetNull)
+  nextOnWrong      InteractiveStep?  @relation("StepBranchWrong", fields: [nextOnWrongId], references: [id], onDelete: SetNull)
+  nextOnCorrectFor InteractiveStep[] @relation("StepBranchCorrect")
+  nextOnWrongFor   InteractiveStep[] @relation("StepBranchWrong")
 
   lesson InteractiveLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 

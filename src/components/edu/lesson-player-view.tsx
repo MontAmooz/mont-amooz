@@ -12,7 +12,7 @@
 // panel links here as the "owner view".
 
 import { ArrowRight, CheckCircle2, Pencil, Trash2, Users, X } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +43,14 @@ import { MarkdownViewer } from "./markdown-viewer";
 
 type StepFeedback = { correct: boolean; explanation: string | null } | null;
 type CompletionSummary = { totalSteps: number; firstTryCorrect: number; totalAttempts: number };
+
+const STEP_TYPE_LABEL: Record<string, string> = {
+  TEXT: "متن",
+  MC: "چندگزینه‌ای",
+  NUMERIC: "پاسخ عددی",
+  FILL_BLANK: "جای خالی",
+  IMAGE: "تصویر",
+};
 
 export function LessonPlayerView({ id }: { id: string }) {
   const { user, sessionLoaded } = useEduStore();
@@ -177,9 +185,7 @@ export function LessonPlayerView({ id }: { id: string }) {
                   {faNumber(s.order + 1)}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-gray-400">
-                    {s.type === "TEXT" ? "متن" : s.type === "MC" ? "چندگزینه‌ای" : "عددی"}
-                  </p>
+                  <p className="text-xs font-bold text-gray-400">{STEP_TYPE_LABEL[s.type] ?? s.type}</p>
                   <div className="mt-1 text-sm leading-7">
                     <MarkdownViewer content={s.content} />
                   </div>
@@ -207,6 +213,34 @@ export function LessonPlayerView({ id }: { id: string }) {
                     <p className="mt-2 border-2 border-success bg-success/10 px-3 py-1.5 text-sm font-bold text-success">
                       پاسخ صحیح: <span className="oeg-mono">{faNumber(s.correctNumeric ?? 0)}</span>
                       {s.tolerance ? ` (± ${faNumber(s.tolerance)})` : ""}
+                    </p>
+                  )}
+                  {s.type === "FILL_BLANK" && s.blankAnswers && (
+                    <ul className="mt-2 space-y-1">
+                      {s.blankAnswers.map((b, i) => (
+                        <li
+                          key={b.id}
+                          className="border-2 border-success bg-success/10 px-3 py-1.5 text-sm font-bold text-success"
+                        >
+                          جای خالی {faNumber(i + 1)}: <span className="oeg-mono">{b.correctAnswer}</span>
+                          {b.caseSensitive ? " (حساس به حروف)" : " (بی‌حساس به حروف)"}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {s.type === "IMAGE" && s.imageUrl && (
+                    <div className="mt-2 border-2 border-ink bg-white p-2">
+                      <img src={s.imageUrl} alt={s.imageCaption ?? "تصویر گام"} className="max-h-56 w-auto max-w-full" />
+                      {s.imageCaption && <p className="mt-1 text-xs text-gray-500">{s.imageCaption}</p>}
+                    </div>
+                  )}
+                  {(s.nextOnCorrect || s.nextOnWrong) && (
+                    <p className="mt-2 text-xs font-bold text-gray-400">
+                      مسیر شرطی:
+                      {s.nextOnCorrect && ` درست → گام ${faNumber(s.nextOnCorrect.order + 1)}`}
+                      {!s.nextOnCorrect && " درست → گام بعدی"}
+                      {s.nextOnWrong && ` غلط → گام ${faNumber(s.nextOnWrong.order + 1)}`}
+                      {!s.nextOnWrong && " غلط → تلاش دوباره"}
                     </p>
                   )}
                   {s.explanation && (
@@ -298,13 +332,16 @@ function StudentPlayer({
   const [completed, setCompleted] = useState(initial?.completed ?? false);
   const [completionSummary, setCompletionSummary] = useState<CompletionSummary | null>(null);
   const [answer, setAnswer] = useState("");
+  const [blankValues, setBlankValues] = useState<Record<string, string>>({});
+  const [wrongJump, setWrongJump] = useState(false); // P21 — «به گام توضیح می‌روید» banner
   const [feedback, setFeedback] = useState<StepFeedback>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const stepList = lesson.steps;
   const step: InteractiveStepStudent | null =
     !completed && currentStep < stepList.length ? stepList[currentStep] : null;
-  const gradedTotal = stepList.filter((s) => s.type !== "TEXT").length;
+  // graded steps only — TEXT/IMAGE are read-only content (no answer to record)
+  const gradedTotal = stepList.filter((s) => s.type !== "TEXT" && s.type !== "IMAGE").length;
 
   async function advance(stepIndex: number, value: string | null) {
     setSubmitting(true);
@@ -314,12 +351,26 @@ function StudentPlayer({
         { method: "POST", json: { stepIndex, answer: value } }
       );
       if (!res.correct) {
-        setFeedback({ correct: false, explanation: res.explanation });
+        if (res.currentStep !== stepIndex) {
+          // P21 — wrong answer with a nextOnWrong branch: the server moved the
+          // cursor to the remediation step. Show the redirect banner and render
+          // the new step (retry-feedback would make no sense on a jumped step).
+          setCurrentStep(res.currentStep);
+          setWrongJump(true);
+          setFeedback(null);
+          setAnswer("");
+          setBlankValues({});
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } else {
+          setFeedback({ correct: false, explanation: res.explanation });
+        }
       } else if (!res.completed) {
         setCurrentStep(res.currentStep);
-        if (step?.type === "TEXT") {
-          // TEXT advance IS the «ادامه» click — show the next step immediately
+        setWrongJump(false);
+        if (step?.type === "TEXT" || step?.type === "IMAGE") {
+          // TEXT/IMAGE advance IS the «ادامه» click — show the next step immediately
           setAnswer("");
+          setBlankValues({});
           window.scrollTo({ top: 0, behavior: "smooth" });
         } else {
           setFeedback({ correct: true, explanation: null });
@@ -329,6 +380,8 @@ function StudentPlayer({
         setCompleted(true);
         setFeedback(null);
         setAnswer("");
+        setBlankValues({});
+        setWrongJump(false);
         toast({ title: "درس تکمیل شد! 🎉" });
       }
     } catch (err) {
@@ -345,6 +398,7 @@ function StudentPlayer({
   function continueAfterCorrect() {
     setFeedback(null);
     setAnswer("");
+    setBlankValues({});
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -445,16 +499,34 @@ function StudentPlayer({
         </div>
       )}
 
+      {/* P21 — the previous answer was wrong and had a remediation branch */}
+      {wrongJump && (
+        <div
+          className="mt-4 flex items-center justify-between gap-3 border-2 border-gold bg-gold/10 p-3 text-sm font-medium text-[#7a5c1e]"
+          role="status"
+        >
+          <span>پاسخ قبلی درست نبود — برای توضیح بیشتر، به گام بعدی می‌روید</span>
+          <button
+            type="button"
+            onClick={() => setWrongJump(false)}
+            aria-label="بستن اعلان مسیر شرطی"
+            className="shrink-0 text-[#7a5c1e] hover:text-ink"
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
       {/* current step card */}
       <div className="mt-6 border-2 border-ink bg-white p-5 md:p-8">
         <span className="oeg-mono inline-block border-2 border-ink px-2 py-0.5 text-xs font-black">
-          {step.type === "TEXT" ? "متن" : step.type === "MC" ? "چندگزینه‌ای" : "پاسخ عددی"}
+          {STEP_TYPE_LABEL[step.type] ?? step.type}
         </span>
         <div className="mt-3 text-sm leading-8 md:text-base">
           <MarkdownViewer content={step.content} />
         </div>
 
-        {step.type === "TEXT" ? (
+        {step.type === "TEXT" || step.type === "IMAGE" ? (
           <Button
             onClick={() => void advance(currentStep, null)}
             disabled={submitting}
@@ -463,6 +535,19 @@ function StudentPlayer({
             {submitting ? <Spinner /> : <ArrowRight className="size-5" aria-hidden="true" />} ادامه
           </Button>
         ) : null}
+
+        {step.type === "IMAGE" && step.imageUrl && (
+          <figure className="mt-4">
+            <img
+              src={step.imageUrl}
+              alt={step.imageCaption ?? "تصویر گام درس"}
+              className="max-h-96 w-auto max-w-full border-2 border-ink"
+            />
+            {step.imageCaption && (
+              <figcaption className="mt-2 text-xs leading-6 text-gray-500">{step.imageCaption}</figcaption>
+            )}
+          </figure>
+        )}
 
         {step.type === "MC" && step.options ? (
           <form
@@ -540,6 +625,44 @@ function StudentPlayer({
                 type="submit"
                 disabled={!answer.trim() || submitting}
                 className="oeg-hard-shadow mt-5 h-12 border-2 border-ink px-8 text-base font-black transition-all duration-150 active:translate-x-1 active:translate-y-1 active:shadow-none"
+              >
+                {submitting ? <Spinner /> : null} بررسی
+              </Button>
+            </fieldset>
+          </form>
+        ) : null}
+
+        {step.type === "FILL_BLANK" && step.blanks ? (
+          <form
+            className="mt-6"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void advance(currentStep, JSON.stringify(blankValues));
+            }}
+          >
+            <fieldset disabled={submitting} className="mt-4 space-y-4">
+              {step.blanks.map((b, i) => (
+                <div key={b.id} className="space-y-1.5">
+                  <label htmlFor={`blank-${b.id}`} className="block text-sm font-black">
+                    جای خالی {faNumber(i + 1)}
+                    {b.caseSensitive ? " (حساس به حروف)" : ""}
+                  </label>
+                  <Input
+                    id={`blank-${b.id}`}
+                    value={blankValues[b.id] ?? ""}
+                    onChange={(e) => setBlankValues((prev) => ({ ...prev, [b.id]: e.target.value }))}
+                    placeholder={b.hint || `پاسخ جای خالی ${faNumber(i + 1)}`}
+                    aria-label={`جای خالی ${faNumber(i + 1)}`}
+                    dir="auto"
+                    className="oeg-mono h-12 w-72 border-2 bg-white"
+                    autoComplete="off"
+                  />
+                </div>
+              ))}
+              <Button
+                type="submit"
+                disabled={submitting || step.blanks.some((b) => !(blankValues[b.id] ?? "").trim())}
+                className="oeg-hard-shadow mt-2 h-12 border-2 border-ink px-8 text-base font-black transition-all duration-150 active:translate-x-1 active:translate-y-1 active:shadow-none"
               >
                 {submitting ? <Spinner /> : null} بررسی
               </Button>

@@ -2424,6 +2424,9 @@ $\\Delta G < 0$ → واکنش خودبه‌خودی. $\\Delta G > 0$ → به �
   }
 
   // ---------- P15: interactive lessons (TEXT / MC / NUMERIC steps) ----------
+  // P21 extends the step union with FILL_BLANK / IMAGE and adds `branch`:
+  // step-index → { onCorrect?, onWrong? } targets, wired in a second pass
+  // after every step exists (step ids are DB-generated — escape-hatch #5).
   async function makeInteractiveLesson(opts: {
     teacher: typeof mohammad;
     title: string;
@@ -2437,7 +2440,15 @@ $\\Delta G < 0$ → واکنش خودبه‌خودی. $\\Delta G > 0$ → به �
       | { type: "TEXT"; content: string; explanation?: string }
       | { type: "MC"; content: string; options: string[]; correct: number; explanation?: string }
       | { type: "NUMERIC"; content: string; correct: number; tolerance?: number; explanation?: string }
+      | {
+          type: "FILL_BLANK";
+          content: string;
+          blanks: Array<{ correctAnswer: string; hint?: string; caseSensitive?: boolean }>;
+          explanation?: string;
+        }
+      | { type: "IMAGE"; content: string; imageUrl: string; imageCaption?: string; explanation?: string }
     >;
+    branch?: Record<number, { onCorrect?: number; onWrong?: number }>;
   }) {
     const l = await db.interactiveLesson.create({
       data: {
@@ -2452,9 +2463,10 @@ $\\Delta G < 0$ → واکنش خودبه‌خودی. $\\Delta G > 0$ → به �
         updatedAt: daysAgo(opts.days),
       },
     });
+    const stepIds: string[] = [];
     let order = 0;
     for (const s of opts.steps) {
-      await db.interactiveStep.create({
+      const created = await db.interactiveStep.create({
         data: {
           lessonId: l.id,
           order, // 0-indexed — matches progress.currentStep
@@ -2470,9 +2482,38 @@ $\\Delta G < 0$ → واکنش خودبه‌خودی. $\\Delta G > 0$ → به �
               }
             : {}),
           ...(s.type === "NUMERIC" ? { correctNumeric: s.correct, tolerance: s.tolerance ?? 0 } : {}),
+          ...(s.type === "FILL_BLANK"
+            ? {
+                blanks: JSON.stringify(
+                  s.blanks.map((b, i) => ({
+                    id: `blank${order}-${i + 1}`,
+                    correctAnswer: b.correctAnswer,
+                    ...(b.hint ? { hint: b.hint } : {}),
+                    caseSensitive: b.caseSensitive ?? false,
+                  }))
+                ),
+              }
+            : {}),
+          ...(s.type === "IMAGE"
+            ? { imageUrl: s.imageUrl, imageCaption: s.imageCaption ?? null }
+            : {}),
         },
       });
+      stepIds.push(created.id);
       order += 1;
+    }
+    if (opts.branch) {
+      for (const [fromRaw, targets] of Object.entries(opts.branch)) {
+        const from = stepIds[Number(fromRaw)];
+        if (!from) continue;
+        await db.interactiveStep.update({
+          where: { id: from },
+          data: {
+            ...(targets.onCorrect !== undefined ? { nextOnCorrectId: stepIds[targets.onCorrect] } : {}),
+            ...(targets.onWrong !== undefined ? { nextOnWrongId: stepIds[targets.onWrong] } : {}),
+          },
+        });
+      }
     }
     return l;
   }
@@ -2636,6 +2677,104 @@ $\\Delta G < 0$ → واکنش خودبه‌خودی. $\\Delta G > 0$ → به �
   }
   console.log(
     `🧩 +${p15Lessons.length} interactive lessons created (${await db.interactiveStep.count()} steps)`
+  );
+
+  // ---------- P21: FILL_BLANK / IMAGE / BRANCHING / mixed lessons ----------
+  const p21Lessons: Parameters<typeof makeInteractiveLesson>[0][] = [
+    {
+      teacher: mohammad,
+      title: "جای خالی: قاعدهٔ توان را خودتان کامل کنید",
+      description: "مشتق توابع توانی را با پرکردن جاهای خالی تثبیت کنید — پاسخ‌ها بی‌حساس به فاصله و بزرگی‌حروف.",
+      grade: "دوازدهم", subject: "حسابان", estimatedMinutes: 10, published: true, days: 1,
+      steps: [
+        { type: "TEXT", content: "## مشتق توابع توانی\n\nقاعدهٔ توان می‌گوید:\n$$\\frac{d}{dx}x^n = nx^{n-1}$$\n\nتوان می‌آید پایین به‌عنوان ضریب، و خودش یکی کم می‌شود. جاهای خالیِ گام بعدی را با همین قاعده پر کنید (نوشتن با فرمول لازم نیست؛ مثلاً `3x^2`)." },
+        {
+          type: "FILL_BLANK",
+          content: "مشتق $f(x) = x^3$ برابر ___ است و مشتق $g(x) = x^2$ برابر ___ است.",
+          blanks: [
+            { correctAnswer: "3x^2", hint: "توان ۳ می‌آید پایین" },
+            { correctAnswer: "2x", hint: "نتیجهٔ ساده‌شده بنویسید" },
+          ],
+          explanation: "$f'(x) = 3x^{2}$ و $g'(x) = 2x$ — توان می‌آید پایین و یکی کم می‌شود.",
+        },
+        {
+          type: "FILL_BLANK",
+          content: "مشتق $h(x) = x^{10}$ برابر ___ است.",
+          blanks: [{ correctAnswer: "10x^9", hint: "n = ۱۰" }],
+          explanation: "با قاعدهٔ توان: $10x^{9}$.",
+        },
+      ],
+    },
+    {
+      teacher: fateme,
+      title: "ساختار سلول — با تصویر یاد بگیرید",
+      description: "تصویر سلول را ببینید، اندامک‌ها را بشناسید و یک گام عددی کوتاه.",
+      grade: "دهم", subject: "زیست‌شناسی", estimatedMinutes: 9, published: true, days: 1,
+      steps: [
+        { type: "TEXT", content: "## یک کارخانهٔ کامل در ۱۰ میکرون\n\nسلول همان چیزی است که در تصویر گام بعد می‌بینید: هستهٔ کنترل، میتوکندریِ نیروگاه، ریبوزومِ کارگاه و شبکهٔ آندوپلاسمیِ جاده. قبل از دیدن تصویر، سعی کنید نام دو اندامک را حدس بزنید." },
+        {
+          type: "IMAGE",
+          content: "## ساختار کلی سلول\n\nتصویر زیر شمای کلی یک سلول یوکاریوت است — هسته در مرکز و اندامک‌ها اطراف آن.",
+          imageUrl: "/courses/cover-science.png",
+          imageCaption: "شمای آموزشی ساختار سلول (تصویر نمایشی از دارایی‌های پلتفرم)",
+        },
+        { type: "NUMERIC", content: "میتوکندری انرژی سلول را به صورت ATP تولید می‌کند. اگر یک سلول ماهیچه‌ای به‌طور میانگین روزانه $2{,}000$ مولکول ATP به‌کار می‌برد و هر ATP انرژی $30$ کیلوژول می‌دهد، کل انرژی چند کیلوژول است؟", correct: 60000, tolerance: 0.01, explanation: "$2{,}000 \\times 30 = 60{,}000$ کیلوژول." },
+      ],
+    },
+    {
+      teacher: zahra,
+      title: "کار و انرژی — با مسیر جایگزین",
+      description: "اگر در سؤال اول گیر کنید، یک گام توضیحی به کمک می‌آید و به همان سؤال برمی‌گردید.",
+      grade: "دهم", subject: "فیزیک", estimatedMinutes: 12, published: true, days: 1,
+      steps: [
+        { type: "TEXT", content: "## جادهٔ اصلی یا مسیر کمکی\n\nاین درس یک **مسیر شرطی** دارد: اگر سؤال اول را اشتباه بزنید، به یک گام توضیحی می‌روید و دوباره به همان سؤال برمی‌گردید. پاسخ درست، شما را مستقیم به گام بعدی می‌برد." },
+        {
+          type: "MC",
+          content: "نیرویی ساک را افقی و با زاویهٔ ۹۰ درجه نسبت به جابه‌جایی حمل می‌کند؛ کار این نیرو روی ساک چقدر است؟",
+          options: ["بیشینه", "صفر", "منفی", "نصف وزن ساک"],
+          correct: 1,
+          explanation: "$W = F\\,d\\cos\\theta$ — جای $\\theta = 90^\\circ$: $\\cos 90^\\circ = 0$، پس کار صفر است.",
+        },
+        { type: "TEXT", content: "## چرا صفر؟\n\nفرمول کار: $W = F\\,d\\cos\\theta$. زاویهٔ ۹۰ درجه یعنی نیرو عمود بر جابه‌جایی است؛ $\\cos 90^\\circ = 0$ پس هرقدر هم نیرو بزرگ باشد، کار انجام‌شده صفر است. حالا به سؤال برگردید — گزینهٔ درست را می‌بینید." },
+        { type: "NUMERIC", content: "انرژی جنبشی جسم ۲ کیلوگرمی با سرعت ۳ متر بر ثانیه چند ژول است؟", correct: 9, tolerance: 0.1, explanation: "$K = \\tfrac{1}{2}mv^2 = \\tfrac{1}{2} \\times 2 \\times 9 = 9$ ژول." },
+        { type: "TEXT", content: "## جمع‌بندی\n\n- کار = مؤلفهٔ نیرو در جهت جابه‌جایی؛ عمود یعنی صفر.\n- قضیهٔ کار-انرژی: کار کل = تغییر انرژی جنبشی." },
+      ],
+      // wrong on the MC → explanation (order 2) → back to the question (order 1);
+      // correct on the MC skips the remediation step straight to the NUMERIC (order 3)
+      branch: { 1: { onCorrect: 3, onWrong: 2 }, 2: { onCorrect: 1 } },
+    },
+    {
+      teacher: ali,
+      title: "هندسهٔ مثلث — همهٔ انواع گام در یک درس",
+      description: "متن، جای خالی، تصویر، چهارگزینه‌ای و عددی — یک تمرین کامل از مساحت مثلث.",
+      grade: "نهم", subject: "هندسه", estimatedMinutes: 14, published: true, days: 1,
+      steps: [
+        { type: "TEXT", content: "## مساحت مثلث\n\nپایه‌ای‌ترین فرمول هندسهٔ دوبعدی:\n$$A = \\tfrac{1}{2} \\times \\text{قاعده} \\times \\text{ارتفاع}$$\n\nدر این درس هر پنج نوع گام را می‌بینید: متن، جای خالی، تصویر، چهارگزینه‌ای و عددی." },
+        {
+          type: "FILL_BLANK",
+          content: "مساحت مثلثی با قاعدهٔ ۸ و ارتفاع ۵ برابر ___ است و اگر ارتفاع دو برابر شود، مساحت ___ برابر می‌شود.",
+          blanks: [
+            { correctAnswer: "20", hint: "½ × 8 × 5" },
+            { correctAnswer: "2", hint: "ضریب خطی" },
+          ],
+          explanation: "$\\tfrac{1}{2} \\times 8 \\times 5 = 20$؛ مساحت با ارتفاع خطی تغییر می‌کند، پس ۲ برابر.",
+        },
+        {
+          type: "IMAGE",
+          content: "## نمودار مساحت نسبت به قاعده\n\nبا ارتفاع ثابت، مساحت خطی با قاعده رشد می‌کند.",
+          imageUrl: "/courses/cover-geometry.png",
+          imageCaption: "شمای هندسه (تصویر نمایشی)",
+        },
+        { type: "MC", content: "کدام شرط برای یکنواخت بودن دو مثلث کافی است؟", options: ["برابر بودن محیط", "برابری دو زاویهٔ متناظر", "برابر بودن یک ضلع", "برابر بودن ارتفاع"], correct: 1, explanation: "معیار AA: دو زاویهٔ متناظر برابر، تشابه را تضمین می‌کند." },
+        { type: "NUMERIC", content: "مثلثی با قاعدهٔ ۱۲ و ارتفاع ۷: مساحت چند است؟", correct: 42, tolerance: 0, explanation: "$\\tfrac{1}{2} \\times 12 \\times 7 = 42$." },
+      ],
+    },
+  ];
+  for (const l of p21Lessons) {
+    await makeInteractiveLesson(l);
+  }
+  console.log(
+    `🧪 +${p21Lessons.length} P21 lessons created (FILL_BLANK / IMAGE / BRANCHING / mixed)`
   );
 
   // ---------- course expansion (10 more) ----------

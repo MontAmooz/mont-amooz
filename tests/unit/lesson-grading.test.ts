@@ -56,6 +56,81 @@ describe("validateStepAnswer", () => {
     expect(validateStepAnswer(step, "-2.995").correct).toBe(true);
     expect(validateStepAnswer(step, "-2").correct).toBe(false);
   });
+
+  test("IMAGE: always correct, like TEXT (P21)", () => {
+    expect(validateStepAnswer({ type: "IMAGE" }, null).correct).toBe(true);
+    expect(validateStepAnswer({ type: "IMAGE" }, "").correct).toBe(true);
+    expect(validateStepAnswer({ type: "IMAGE" }, "هر چیزی").correct).toBe(true);
+  });
+});
+
+describe("validateStepAnswer — FILL_BLANK (P21)", () => {
+  const blanks = [
+    { id: "blank1-1", correctAnswer: "3x^2", caseSensitive: false },
+    { id: "blank1-2", correctAnswer: "2x", caseSensitive: false },
+  ];
+
+  test("all blanks correct → true", () => {
+    const answer = JSON.stringify({ "blank1-1": "3x^2", "blank1-2": "2x" });
+    expect(validateStepAnswer({ type: "FILL_BLANK", blanks }, answer).correct).toBe(true);
+  });
+
+  test("one blank wrong → false (all-or-nothing)", () => {
+    const answer = JSON.stringify({ "blank1-1": "3x^2", "blank1-2": "x^2" });
+    expect(validateStepAnswer({ type: "FILL_BLANK", blanks }, answer).correct).toBe(false);
+  });
+
+  test("case-insensitive by default", () => {
+    const csBlanks = [{ id: "b1", correctAnswer: "Sine", caseSensitive: false }];
+    expect(
+      validateStepAnswer({ type: "FILL_BLANK", blanks: csBlanks }, JSON.stringify({ b1: "sine" })).correct
+    ).toBe(true);
+  });
+
+  test("caseSensitive distinguishes case", () => {
+    const csBlanks = [{ id: "b1", correctAnswer: "Sine", caseSensitive: true }];
+    expect(
+      validateStepAnswer({ type: "FILL_BLANK", blanks: csBlanks }, JSON.stringify({ b1: "Sine" })).correct
+    ).toBe(true);
+    expect(
+      validateStepAnswer({ type: "FILL_BLANK", blanks: csBlanks }, JSON.stringify({ b1: "sine" })).correct
+    ).toBe(false);
+  });
+
+  test("internal whitespace collapses (math answers)", () => {
+    expect(
+      validateStepAnswer({ type: "FILL_BLANK", blanks }, JSON.stringify({ "blank1-1": "3 x^2", "blank1-2": "2 x" })).correct
+    ).toBe(true);
+    // leading/trailing spaces are trimmed before comparison too
+    expect(
+      validateStepAnswer({ type: "FILL_BLANK", blanks }, JSON.stringify({ "blank1-1": " 3x^2 ", "blank1-2": " 2x" })).correct
+    ).toBe(true);
+  });
+
+  test("empty / missing input → false", () => {
+    expect(validateStepAnswer({ type: "FILL_BLANK", blanks }, null).correct).toBe(false);
+    expect(validateStepAnswer({ type: "FILL_BLANK", blanks }, "").correct).toBe(false);
+    expect(validateStepAnswer({ type: "FILL_BLANK", blanks }, JSON.stringify({})).correct).toBe(false);
+    // a blank answered with null-ish (non-string) value → false
+    expect(
+      validateStepAnswer({ type: "FILL_BLANK", blanks }, JSON.stringify({ "blank1-1": null, "blank1-2": "2x" })).correct
+    ).toBe(false);
+  });
+
+  test("malformed JSON → false", () => {
+    expect(validateStepAnswer({ type: "FILL_BLANK", blanks }, "{not json").correct).toBe(false);
+    expect(validateStepAnswer({ type: "FILL_BLANK", blanks }, "[1,2]").correct).toBe(false);
+    expect(validateStepAnswer({ type: "FILL_BLANK", blanks }, "42").correct).toBe(false);
+  });
+
+  test("no blanks stored → false", () => {
+    expect(
+      validateStepAnswer({ type: "FILL_BLANK", blanks: null }, JSON.stringify({ b: "x" })).correct
+    ).toBe(false);
+    expect(
+      validateStepAnswer({ type: "FILL_BLANK", blanks: [] }, JSON.stringify({ b: "x" })).correct
+    ).toBe(false);
+  });
 });
 
 describe("computeFirstTryCorrect", () => {

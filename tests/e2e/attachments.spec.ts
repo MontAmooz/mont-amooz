@@ -9,7 +9,8 @@ import { DEMO_FOUNDER, apiLogin, pageWithCookie } from "./utils";
 const SAMPLE_PDF = path.join(__dirname, "fixtures", "sample.pdf");
 
 test("creating a pamphlet with a PDF attachment shows the پیوست‌ها tab with an embedded PDF", async ({ page }) => {
-  test.setTimeout(90000);
+  // slow-runner margin (P20 flake history — flaked 3× in CI at 90s, always passed on retry)
+  test.setTimeout(180000);
   const cookie = await apiLogin(page.request, DEMO_FOUNDER.email, DEMO_FOUNDER.password);
   const p = await pageWithCookie(page.context().browser()!, cookie);
 

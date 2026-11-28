@@ -30,24 +30,155 @@ import { useEduStore } from "./store";
 
 const STEPS = ["مشخصات درس", "گام‌ها", "پیش‌نمایش و ایجاد"] as const;
 const EDIT_STEPS = ["مشخصات درس", "گام‌ها", "پیش‌نمایش و ذخیره"] as const;
-const TYPE_LABEL = { TEXT: "متن", MC: "چندگزینه‌ای", NUMERIC: "عددی" } as const;
+const TYPE_LABEL = {
+  TEXT: "متن",
+  MC: "چندگزینه‌ای",
+  NUMERIC: "عددی",
+  FILL_BLANK: "جای خالی",
+  IMAGE: "تصویر",
+} as const;
 
-type DraftStep =
-  | { type: "TEXT"; content: string; explanation: string }
-  | { type: "MC"; content: string; options: string[]; correctIndex: number; explanation: string }
-  | {
-      type: "NUMERIC";
-      content: string;
-      correctNumeric: string;
-      tolerance: string;
-      explanation: string;
-    };
+/** Count the ___ placeholders in a draft FILL_BLANK content (2+ underscores —
+ * same tolerance the server applies; P21 hatch #1). */
+function countBlanks(content: string): number {
+  return content.split(/_{2,}/).length - 1;
+}
 
-function emptyStep(type: "TEXT" | "MC" | "NUMERIC"): DraftStep {
-  if (type === "TEXT") return { type: "TEXT", content: "", explanation: "" };
-  if (type === "MC")
-    return { type: "MC", content: "", options: ["", ""], correctIndex: 0, explanation: "" };
-  return { type: "NUMERIC", content: "", correctNumeric: "", tolerance: "0", explanation: "" };
+/** Graded = has a wrong-answer path at all (TEXT/IMAGE are read-only). */
+function gradedType(type: DraftStep["type"]): boolean {
+  return type === "MC" || type === "NUMERIC" || type === "FILL_BLANK";
+}
+
+// Branch dropdowns use a "none" sentinel — Radix Select forbids "" values.
+const BRANCH_NONE = "none";
+
+type DraftBlank = { correctAnswer: string; hint: string; caseSensitive: boolean };
+
+type DraftStep = {
+  type: "TEXT" | "MC" | "NUMERIC" | "FILL_BLANK" | "IMAGE";
+  content: string;
+  explanation: string;
+  // P21 branching — indices into the steps array; null = sequential/retry
+  nextOnCorrect: number | null;
+  nextOnWrong: number | null;
+  // MC
+  options: string[];
+  correctIndex: number;
+  // NUMERIC
+  correctNumeric: string;
+  tolerance: string;
+  // FILL_BLANK
+  blanks: DraftBlank[];
+  // IMAGE
+  imageUrl: string;
+  imageCaption: string;
+};
+
+function emptyStep(type: DraftStep["type"]): DraftStep {
+  return {
+    type,
+    content: "",
+    explanation: "",
+    nextOnCorrect: null,
+    nextOnWrong: null,
+    options: ["", ""],
+    correctIndex: 0,
+    correctNumeric: "",
+    tolerance: "0",
+    blanks: [{ correctAnswer: "", hint: "", caseSensitive: false }],
+    imageUrl: "",
+    imageCaption: "",
+  };
+}
+
+/** P21 — collapsible per-step branch config. Graded steps get both dropdowns
+ * (correct → jump / wrong → jump); read-only TEXT/IMAGE steps only advance, so
+ * they expose just the correct-path dropdown (this is what lets a remediation
+ * explanation loop back to its question — C.4's documented pattern). */
+function BranchingEditor({
+  stepIndex,
+  totalSteps,
+  graded,
+  nextOnCorrect,
+  nextOnWrong,
+  disabled,
+  onChange,
+}: {
+  stepIndex: number;
+  totalSteps: number;
+  graded: boolean;
+  nextOnCorrect: number | null;
+  nextOnWrong: number | null;
+  disabled?: boolean;
+  onChange: (patch: { nextOnCorrect?: number | null; nextOnWrong?: number | null }) => void;
+}) {
+  const [open, setOpen] = useState(
+    nextOnCorrect !== null || nextOnWrong !== null
+  );
+  const hasAny = nextOnCorrect !== null || nextOnWrong !== null;
+  const others = Array.from({ length: totalSteps }, (_, i) => i).filter((i) => i !== stepIndex);
+
+  return (
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between border-2 border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black text-gray-600 hover:border-gray-300"
+        aria-expanded={open}
+        aria-label="تنظیم مسیر شرطی گام"
+      >
+        <span>
+          مسیر شرطی (اختیاری){hasAny ? " — تنظیم شده" : ""}
+        </span>
+        {open ? <ChevronUp className="size-3.5" aria-hidden="true" /> : <ChevronDown className="size-3.5" aria-hidden="true" />}
+      </button>
+      {open && (
+        <div className="space-y-3 border-2 border-t-0 border-gray-200 p-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-black text-gray-500">اگر پاسخ درست بود برو به</Label>
+            <Select
+              value={nextOnCorrect === null ? BRANCH_NONE : String(nextOnCorrect)}
+              onValueChange={(v) => onChange({ nextOnCorrect: v === BRANCH_NONE ? null : Number(v) })}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-10 w-full border-2 bg-white font-medium" aria-label="مقصد پاسخ درست">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={BRANCH_NONE}>گام بعدی (ترتیب عادی)</SelectItem>
+                {others.map((i) => (
+                  <SelectItem key={i} value={String(i)}>گام {faNumber(i + 1)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {graded && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-black text-gray-500">اگر پاسخ غلط بود برو به</Label>
+              <Select
+                value={nextOnWrong === null ? BRANCH_NONE : String(nextOnWrong)}
+                onValueChange={(v) => onChange({ nextOnWrong: v === BRANCH_NONE ? null : Number(v) })}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-10 w-full border-2 bg-white font-medium" aria-label="مقصد پاسخ غلط">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={BRANCH_NONE}>همین گام (تلاش دوباره)</SelectItem>
+                  {others.map((i) => (
+                    <SelectItem key={i} value={String(i)}>گام {faNumber(i + 1)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <p className="text-xs leading-6 text-gray-400">
+            اگر گام‌های دارای مسیر شرطی ایجاد حلقه کنند، ممکن است دانش‌آموز گیر کند. از حلقهٔ بی‌پایان پرهیز کنید.
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function LessonCreateView({ editId }: { editId?: string }) {
@@ -64,6 +195,7 @@ export function LessonCreateView({ editId }: { editId?: string }) {
   const [published, setPublished] = useState(false);
   const [steps, setSteps] = useState<DraftStep[]>([emptyStep("TEXT"), emptyStep("MC")]);
   const [busy, setBusy] = useState(false);
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [hasProgress, setHasProgress] = useState(false);
   const [loaded, setLoaded] = useState(!isEdit);
@@ -91,6 +223,12 @@ export function LessonCreateView({ editId }: { editId?: string }) {
             correctNumeric: number | null;
             tolerance: number | null;
             explanation: string | null;
+            blankAnswers: { id: string; correctAnswer: string; caseSensitive: boolean }[] | null;
+            blanks: { id: string; hint?: string; caseSensitive: boolean }[] | null;
+            imageUrl: string | null;
+            imageCaption: string | null;
+            nextOnCorrect: { id: string; order: number } | null;
+            nextOnWrong: { id: string; order: number } | null;
           }>;
         }>(`/interactive-lessons/${editId}`);
         if (cancelled) return;
@@ -108,27 +246,28 @@ export function LessonCreateView({ editId }: { editId?: string }) {
         setHasProgress(lesson.hasProgress);
         setSteps(
           lesson.steps.map((s): DraftStep => {
-            const explanation = s.explanation ?? "";
-            if (s.type === "MC" && s.options) {
-              const texts = s.options.map((o) => o.text);
-              return {
-                type: "MC",
-                content: s.content,
-                options: texts,
-                correctIndex: Math.max(0, s.options.findIndex((o) => o.id === s.correctOptionId)),
-                explanation,
-              };
-            }
-            if (s.type === "NUMERIC") {
-              return {
-                type: "NUMERIC",
-                content: s.content,
-                correctNumeric: s.correctNumeric !== null ? String(s.correctNumeric) : "",
-                tolerance: s.tolerance !== null ? String(s.tolerance) : "0",
-                explanation,
-              };
-            }
-            return { type: "TEXT", content: s.content, explanation };
+            // order === index (steps are created 0-indexed sequentially)
+            const draft: DraftStep = {
+              type: (s.type as DraftStep["type"]) ?? "TEXT",
+              content: s.content,
+              explanation: s.explanation ?? "",
+              nextOnCorrect: s.nextOnCorrect ? s.nextOnCorrect.order : null,
+              nextOnWrong: s.nextOnWrong ? s.nextOnWrong.order : null,
+              options: s.options?.map((o) => o.text) ?? ["", ""],
+              correctIndex: Math.max(0, (s.options ?? []).findIndex((o) => o.id === s.correctOptionId)),
+              correctNumeric: s.correctNumeric !== null ? String(s.correctNumeric) : "",
+              tolerance: s.tolerance !== null ? String(s.tolerance) : "0",
+              blanks:
+                s.blankAnswers?.map((b, bi) => ({
+                  correctAnswer: b.correctAnswer,
+                  // hint lives on the student-shaped spec, matched by position
+                  hint: s.blanks?.[bi]?.hint ?? "",
+                  caseSensitive: b.caseSensitive,
+                })) ?? [{ correctAnswer: "", hint: "", caseSensitive: false }],
+              imageUrl: s.imageUrl ?? "",
+              imageCaption: s.imageCaption ?? "",
+            };
+            return draft;
           })
         );
         setLoaded(true);
@@ -175,6 +314,25 @@ export function LessonCreateView({ editId }: { editId?: string }) {
       [next[index], next[target]] = [next[target], next[index]];
       return next;
     });
+  }
+
+  /** P21 — POST /step-images for an IMAGE step, then store the returned URL. */
+  async function uploadImage(index: number, file: File) {
+    setUploadingIndex(index);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const { url } = await api<{ url: string }>("/step-images", { method: "POST", form });
+      setStepDraft(index, { imageUrl: url });
+    } catch (err) {
+      toast({
+        title: "آپلود تصویر ناموفق بود",
+        description: err instanceof Error ? err.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingIndex(null);
+    }
   }
 
   function validateStep1(): boolean {
@@ -235,6 +393,34 @@ export function LessonCreateView({ editId }: { editId?: string }) {
           return false;
         }
       }
+      if (s.type === "FILL_BLANK") {
+        const markerCount = countBlanks(s.content);
+        if (markerCount !== s.blanks.length) {
+          toast({
+            title: `گام ${i + 1}: تعداد ___ در متن باید با تعداد پاسخ‌ها (${faNumber(s.blanks.length)}) برابر باشد`,
+            variant: "destructive",
+          });
+          return false;
+        }
+        if (s.blanks.some((b) => !b.correctAnswer.trim() || b.correctAnswer.trim().length > 100)) {
+          toast({ title: `پاسخ صحیح هر جای خالی گام ${i + 1} باید ۱ تا ۱۰۰ نویسه باشد`, variant: "destructive" });
+          return false;
+        }
+        if (s.blanks.some((b) => b.hint.trim().length > 200)) {
+          toast({ title: `راهنمای جای خالی گام ${i + 1} حداکثر ۲۰۰ نویسه است`, variant: "destructive" });
+          return false;
+        }
+      }
+      if (s.type === "IMAGE") {
+        if (!s.imageUrl || !s.imageUrl.startsWith("/") || s.imageUrl.startsWith("//")) {
+          toast({ title: `تصویر گام ${i + 1} هنوز آپلود نشده است`, variant: "destructive" });
+          return false;
+        }
+        if (s.imageCaption.trim().length > 200) {
+          toast({ title: `توضیح تصویر گام ${i + 1} حداکثر ۲۰۰ نویسه است`, variant: "destructive" });
+          return false;
+        }
+      }
     }
     return true;
   }
@@ -248,7 +434,11 @@ export function LessonCreateView({ editId }: { editId?: string }) {
   function stepsPayload() {
     return steps.map((s) => {
       const explanation = s.explanation.trim() || undefined;
-      if (s.type === "TEXT") return { type: "TEXT", content: s.content.trim(), explanation };
+      const branch = {
+        ...(s.nextOnCorrect !== null ? { nextOnCorrectIndex: s.nextOnCorrect } : {}),
+        ...(s.nextOnWrong !== null ? { nextOnWrongIndex: s.nextOnWrong } : {}),
+      };
+      if (s.type === "TEXT") return { type: "TEXT", content: s.content.trim(), explanation, ...branch };
       if (s.type === "MC")
         return {
           type: "MC",
@@ -256,13 +446,36 @@ export function LessonCreateView({ editId }: { editId?: string }) {
           options: s.options.map((o) => ({ text: o.trim() })),
           correctOptionIndex: s.correctIndex,
           explanation,
+          ...branch,
+        };
+      if (s.type === "NUMERIC")
+        return {
+          type: "NUMERIC",
+          content: s.content.trim(),
+          correctNumeric: Number(s.correctNumeric),
+          tolerance: Number(s.tolerance || "0"),
+          explanation,
+          ...branch,
+        };
+      if (s.type === "FILL_BLANK")
+        return {
+          type: "FILL_BLANK",
+          content: s.content.trim(),
+          blanks: s.blanks.map((b) => ({
+            correctAnswer: b.correctAnswer.trim(),
+            ...(b.hint.trim() ? { hint: b.hint.trim() } : {}),
+            caseSensitive: b.caseSensitive,
+          })),
+          explanation,
+          ...branch,
         };
       return {
-        type: "NUMERIC",
+        type: "IMAGE",
         content: s.content.trim(),
-        correctNumeric: Number(s.correctNumeric),
-        tolerance: Number(s.tolerance || "0"),
+        imageUrl: s.imageUrl,
+        ...(s.imageCaption.trim() ? { imageCaption: s.imageCaption.trim() } : {}),
         explanation,
+        ...branch,
       };
     });
   }
@@ -571,6 +784,135 @@ export function LessonCreateView({ editId }: { editId?: string }) {
                   </div>
                 )}
 
+                {s.type === "FILL_BLANK" && (
+                  <div className="mt-3 space-y-2">
+                    <p className="border-2 border-dashed border-gray-200 bg-gray-50 px-3 py-2 text-xs leading-6 text-gray-500">
+                      در متن سؤال هر جا که پاسخ باید بیاید <code dir="ltr" className="oeg-mono">___</code> بنویسید.
+                      تعداد <code dir="ltr" className="oeg-mono">___</code> در متن باید با تعداد پاسخ‌های زیر برابر باشد
+                      (الان: <b>{faNumber(countBlanks(s.content))}</b> در متن، <b>{faNumber(s.blanks.length)}</b> پاسخ).
+                    </p>
+                    {s.blanks.map((b, bi) => (
+                      <div key={bi} className="space-y-2 border-2 border-gray-200 p-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-black text-gray-500">جای خالی {faNumber(bi + 1)}</Label>
+                          {s.blanks.length > 1 && !hasProgress && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setStepDraft(si, { blanks: s.blanks.filter((_, j) => j !== bi) })
+                              }
+                              className="h-8 border-2 border-gray-200 font-bold text-gray-500"
+                              aria-label={`حذف جای خالی ${bi + 1} گام ${si + 1}`}
+                            >
+                              <Trash2 className="size-3" aria-hidden="true" />
+                            </Button>
+                          )}
+                        </div>
+                        <Input
+                          value={b.correctAnswer}
+                          onChange={(e) =>
+                            setStepDraft(si, {
+                              blanks: s.blanks.map((bl, j) =>
+                                j === bi ? { ...bl, correctAnswer: e.target.value } : bl
+                              ),
+                            })
+                          }
+                          placeholder="پاسخ صحیح (مثلاً 3x^2)"
+                          aria-label={`پاسخ صحیح جای خالی ${bi + 1} گام ${si + 1}`}
+                          className="oeg-mono h-10 border-2 bg-white"
+                          disabled={hasProgress}
+                        />
+                        <Input
+                          value={b.hint}
+                          onChange={(e) =>
+                            setStepDraft(si, {
+                              blanks: s.blanks.map((bl, j) =>
+                                j === bi ? { ...bl, hint: e.target.value } : bl
+                              ),
+                            })
+                          }
+                          placeholder="راهنمای اختیاری برای دانش‌آموز"
+                          aria-label={`راهنمای جای خالی ${bi + 1} گام ${si + 1}`}
+                          className="h-10 border-2 bg-white"
+                          disabled={hasProgress}
+                        />
+                        <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-gray-600">
+                          <input
+                            type="checkbox"
+                            checked={b.caseSensitive}
+                            onChange={(e) =>
+                              setStepDraft(si, {
+                                blanks: s.blanks.map((bl, j) =>
+                                  j === bi ? { ...bl, caseSensitive: e.target.checked } : bl
+                                ),
+                              })
+                            }
+                            className="size-4 accent-primary"
+                            disabled={hasProgress}
+                          />
+                          به بزرگی و کوچکی حروف حساس باشد
+                        </label>
+                      </div>
+                    ))}
+                    {s.blanks.length < 3 && !hasProgress && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setStepDraft(si, {
+                            blanks: [...s.blanks, { correctAnswer: "", hint: "", caseSensitive: false }],
+                          })
+                        }
+                        className="h-8 border-2 border-gray-200 font-bold"
+                      >
+                        <Plus className="size-3" aria-hidden="true" /> افزودن جای خالی (حداکثر ۳)
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {s.type === "IMAGE" && (
+                  <div className="mt-3 space-y-3">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) void uploadImage(si, f);
+                        e.target.value = "";
+                      }}
+                      aria-label={`فایل تصویر گام ${si + 1}`}
+                      className="block w-full text-sm text-gray-500 file:me-3 file:border-2 file:border-ink file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-black"
+                      disabled={hasProgress || uploadingIndex === si}
+                    />
+                    {uploadingIndex === si && (
+                      <p className="flex items-center gap-2 text-sm font-bold text-gray-500">
+                        <Spinner /> در حال آپلود…
+                      </p>
+                    )}
+                    {s.imageUrl && (
+                      <div className="border-2 border-ink bg-white p-2">
+                        <img
+                          src={s.imageUrl}
+                          alt={`پیش‌نمایش تصویر گام ${si + 1}`}
+                          className="max-h-48 w-auto max-w-full"
+                        />
+                      </div>
+                    )}
+                    <Input
+                      value={s.imageCaption}
+                      onChange={(e) => setStepDraft(si, { imageCaption: e.target.value })}
+                      placeholder="توضیح تصویر (اختیاری — حداکثر ۲۰۰ نویسه)"
+                      aria-label={`توضیح تصویر گام ${si + 1}`}
+                      className="h-10 border-2 bg-white"
+                      disabled={hasProgress}
+                    />
+                  </div>
+                )}
+
                 <div className="mt-3 space-y-1.5">
                   <Label className="text-xs font-black text-gray-500">توضیح پاسخ اشتباه (اختیاری)</Label>
                   <Textarea
@@ -582,6 +924,16 @@ export function LessonCreateView({ editId }: { editId?: string }) {
                     disabled={hasProgress}
                   />
                 </div>
+
+                <BranchingEditor
+                  stepIndex={si}
+                  totalSteps={steps.length}
+                  graded={s.type === "MC" || s.type === "NUMERIC" || s.type === "FILL_BLANK"}
+                  nextOnCorrect={s.nextOnCorrect}
+                  nextOnWrong={s.nextOnWrong}
+                  disabled={hasProgress}
+                  onChange={(patch) => setStepDraft(si, patch)}
+                />
               </fieldset>
             ))}
 
@@ -592,7 +944,7 @@ export function LessonCreateView({ editId }: { editId?: string }) {
                     value=""
                     onValueChange={(v) => {
                       if (!v) return;
-                      setSteps((prev) => [...prev, emptyStep(v as "TEXT" | "MC" | "NUMERIC")]);
+                      setSteps((prev) => [...prev, emptyStep(v as DraftStep["type"])]);
                     }}
                   >
                     <SelectTrigger className="h-11 w-44 border-2 border-ink font-black" aria-label="افزودن گام جدید">
@@ -602,6 +954,8 @@ export function LessonCreateView({ editId }: { editId?: string }) {
                       <SelectItem value="TEXT">متن توضیحی</SelectItem>
                       <SelectItem value="MC">چندگزینه‌ای</SelectItem>
                       <SelectItem value="NUMERIC">پاسخ عددی</SelectItem>
+                      <SelectItem value="FILL_BLANK">جای خالی</SelectItem>
+                      <SelectItem value="IMAGE">تصویر</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -661,6 +1015,35 @@ export function LessonCreateView({ editId }: { editId?: string }) {
                       {Number(s.tolerance || 0) > 0 ? ` (± ${s.tolerance})` : ""}
                     </p>
                   ) : null}
+                  {s.type === "FILL_BLANK" ? (
+                    <ul className="mt-1 space-y-0.5 text-gray-600">
+                      {s.blanks.map((b, bi) => (
+                        <li key={bi} className="font-black text-success">
+                          ✓ جای خالی {faNumber(bi + 1)}: {b.correctAnswer}
+                          {b.caseSensitive ? " (حساس به حروف)" : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {s.type === "IMAGE" && s.imageUrl ? (
+                    <div className="mt-1">
+                      <img
+                        src={s.imageUrl}
+                        alt={`پیش‌نمایش تصویر گام ${si + 1}`}
+                        className="max-h-40 w-auto max-w-full border-2 border-ink"
+                      />
+                      {s.imageCaption && <p className="mt-1 text-xs text-gray-500">{s.imageCaption}</p>}
+                    </div>
+                  ) : null}
+                  {(s.nextOnCorrect !== null || s.nextOnWrong !== null) && (
+                    <p className="mt-1 text-xs font-bold text-gray-400">
+                      مسیر شرطی:
+                      {s.nextOnCorrect !== null && ` درست → گام ${faNumber(s.nextOnCorrect + 1)}`}
+                      {s.nextOnCorrect === null && gradedType(s.type) && " درست → گام بعدی"}
+                      {s.nextOnWrong !== null && ` غلط → گام ${faNumber(s.nextOnWrong + 1)}`}
+                      {s.nextOnWrong === null && gradedType(s.type) && " غلط → تلاش دوباره"}
+                    </p>
+                  )}
                 </li>
               ))}
             </ol>

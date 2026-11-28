@@ -13,7 +13,11 @@ concurrency:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # P21: the suite grew to 79 specs (interactive polish adds 4, incl. a
+    # wizard image-upload flow) and hit this job's 15m cap on the runner —
+    # canceled mid-run, which reads as an e2e failure. 25m covers ~20m suite
+    # + artifact restore; same raise-timeout precedent as P10's vitest.
+    timeout-minutes: 25
     env:
       # Required at module load of src/lib/server/auth.ts (see ADR-0004).
       # Random per run — the app copy and the classroom service both inherit

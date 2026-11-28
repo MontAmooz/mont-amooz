@@ -19,7 +19,13 @@ const STEP_SELECT = {
   correctOptionId: true,
   correctNumeric: true,
   tolerance: true,
+  blanks: true,
+  imageUrl: true,
+  imageCaption: true,
   explanation: true,
+  // P21 — resolved branch targets for the { id, order } shape
+  nextOnCorrect: { select: { id: true, order: true } },
+  nextOnWrong: { select: { id: true, order: true } },
 } as const;
 
 function toLessonSummary(
@@ -208,7 +214,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const steps = parseInteractiveSteps(body.steps);
     if (typeof steps === "string") return fail(steps);
 
-    // simplest correct MVP edit: replace all steps (delete + recreate)
+    // simplest correct MVP edit: replace all steps (delete + recreate), then
+    // wire P21 branch targets (payload indices → fresh DB ids) in a second pass
     await db.$transaction([
       db.interactiveStep.deleteMany({ where: { lessonId: id } }),
       db.interactiveStep.createMany({
@@ -221,10 +228,27 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           correctOptionId: s.correctOptionId,
           correctNumeric: s.correctNumeric,
           tolerance: s.tolerance,
+          blanks: s.blanks ? JSON.stringify(s.blanks) : null,
+          imageUrl: s.imageUrl,
+          imageCaption: s.imageCaption,
           explanation: s.explanation,
         })),
       }),
     ]);
+    const recreated = await db.interactiveStep.findMany({
+      where: { lessonId: id },
+      orderBy: { order: "asc" },
+      select: { id: true },
+    });
+    const branchUpdates = steps.flatMap((s, i) => {
+      const data: { nextOnCorrectId?: string; nextOnWrongId?: string } = {};
+      if (s.nextOnCorrectIndex !== null) data.nextOnCorrectId = recreated[s.nextOnCorrectIndex].id;
+      if (s.nextOnWrongIndex !== null) data.nextOnWrongId = recreated[s.nextOnWrongIndex].id;
+      return Object.keys(data).length > 0 ? [{ where: { id: recreated[i].id }, data }] : [];
+    });
+    if (branchUpdates.length > 0) {
+      await db.$transaction(branchUpdates.map((u) => db.interactiveStep.update(u)));
+    }
   }
 
   await db.interactiveLesson.update({ where: { id }, data });

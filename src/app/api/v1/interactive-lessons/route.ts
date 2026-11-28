@@ -122,7 +122,9 @@ export async function POST(req: Request) {
   const steps = parseInteractiveSteps(body.steps);
   if (typeof steps === "string") return fail(steps);
 
-  const lesson = await db.interactiveLesson.create({
+  // P21 — steps are created first (ids are DB-generated), then branch targets
+  // (sent as payload indices) are wired to the real step ids in a second pass.
+  const created = await db.interactiveLesson.create({
     data: {
       teacherId: user.id,
       title,
@@ -140,11 +142,25 @@ export async function POST(req: Request) {
           correctOptionId: s.correctOptionId,
           correctNumeric: s.correctNumeric,
           tolerance: s.tolerance,
+          blanks: s.blanks ? JSON.stringify(s.blanks) : null,
+          imageUrl: s.imageUrl,
+          imageCaption: s.imageCaption,
           explanation: s.explanation,
         })),
       },
     },
-    select: { id: true },
+    include: { steps: { orderBy: { order: "asc" } } },
   });
-  return ok({ id: lesson.id }, 201);
+
+  const branchUpdates = steps.flatMap((s, i) => {
+    const data: { nextOnCorrectId?: string; nextOnWrongId?: string } = {};
+    if (s.nextOnCorrectIndex !== null) data.nextOnCorrectId = created.steps[s.nextOnCorrectIndex].id;
+    if (s.nextOnWrongIndex !== null) data.nextOnWrongId = created.steps[s.nextOnWrongIndex].id;
+    return Object.keys(data).length > 0 ? [{ where: { id: created.steps[i].id }, data }] : [];
+  });
+  if (branchUpdates.length > 0) {
+    await db.$transaction(branchUpdates.map((u) => db.interactiveStep.update(u)));
+  }
+
+  return ok({ id: created.id }, 201);
 }

@@ -64,7 +64,8 @@ test("user redeems the token at #/reset and logs in with the new password", asyn
   await p.getByLabel("تکرار رمز جدید").fill("reset-new-pass-9");
   await p.getByRole("button", { name: "ثبت رمز جدید" }).click();
 
-  await expect(p.getByText("رمز تغییر کرد. اکنون وارد شوید.")).toBeVisible({ timeout: 15000 });
+  // toast — appears twice in the DOM (title div + notification span), so .first() (P20)
+  await expect(p.getByText("رمز تغییر کرد. اکنون وارد شوید.").first()).toBeVisible({ timeout: 15000 });
 
   // login with the new password through the UI
   await p.goto("/");

@@ -1,5 +1,8 @@
 // P8 — shared E2E helpers. Login cookies come from the real API; every
 // selector is role/aria/text-based (the app ships no data-testid).
+
+// NOTE: toasts appear twice in the DOM (title div + notification span) — always .first()
+// when asserting toast text (P20 finding; see admin-reset.spec.ts / auth-hardening.spec.ts).
 import { expect, type APIRequestContext, type Browser, type Page } from "@playwright/test";
 
 export const DEMO_FOUNDER = { email: "montajebii@montamooz.ir", password: "123456" };
