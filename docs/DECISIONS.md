@@ -11,18 +11,19 @@
 | # | تصمیم | وضعیت | فایل |
 |---|---|---|---|
 | 0001 | Next.js 16 به‌جای FastAPI | ✅ ACCEPTED | [adr/0001-use-nextjs-instead-of-fastapi.md](adr/0001-use-nextjs-instead-of-fastapi.md) |
-| 0002 | SQLite برای توسعه، PostgreSQL برای پروداکشن | ✅ ACCEPTED — مهاجرت در P4 | [adr/0002-sqlite-mvp-postgres-production.md](adr/0002-sqlite-mvp-postgres-production.md) |
+| 0002 | SQLite برای توسعه، PostgreSQL برای پروداکشن | ✅ ACCEPTED — مهاجرت PostgreSQL اجرا نشده؛ در انتظار تصمیم (ADR-0014) | [adr/0002-sqlite-mvp-postgres-production.md](adr/0002-sqlite-mvp-postgres-production.md) |
 | 0003 | Prisma 6 به‌عنوان ORM | ✅ ACCEPTED | [adr/0003-prisma-orm.md](adr/0003-prisma-orm.md) |
-| 0004 | نشست کوکی HMAC به‌جای JWT | ✅ ACCEPTED — مهاجرت به JWT در P6 | [adr/0004-hmac-cookie-sessions.md](adr/0004-hmac-cookie-sessions.md) |
-| 0005 | درگاه پرداخت نمایشی (mock) تا e-namad | ✅ ACCEPTED — زرین‌پال در P10 | [adr/0005-mock-payment-gateway.md](adr/0005-mock-payment-gateway.md) |
-| 0006 | کلاس زنده: چت + تخته (بدون WebRTC فعلاً) | ✅ ACCEPTED — WebRTC در P11 | [adr/0006-chat-whiteboard-classroom.md](adr/0006-chat-whiteboard-classroom.md) |
-| 0007 | محتوای جزوه: Markdown در دیتابیس (تا MinIO) | ✅ ACCEPTED — MinIO در P5 | [adr/0007-markdown-in-db.md](adr/0007-markdown-in-db.md) |
+| 0004 | نشست کوکی HMAC به‌جای JWT | ✅ ACCEPTED — مهاجرت به JWT اجرا نشده؛ در انتظار تصمیم (ADR-0014) | [adr/0004-hmac-cookie-sessions.md](adr/0004-hmac-cookie-sessions.md) |
+| 0005 | درگاه پرداخت نمایشی (mock) تا e-namad | ✅ ACCEPTED — زرین‌پال اجرا نشده؛ در انتظار تصمیم (ADR-0014) | [adr/0005-mock-payment-gateway.md](adr/0005-mock-payment-gateway.md) |
+| 0006 | کلاس زنده: چت + تخته (بدون WebRTC فعلاً) | ✅ ACCEPTED — WebRTC اجرا نشده؛ در انتظار تصمیم (ADR-0014) | [adr/0006-chat-whiteboard-classroom.md](adr/0006-chat-whiteboard-classroom.md) |
+| 0007 | محتوای جزوه: Markdown در دیتابیس (تا MinIO) | ✅ ACCEPTED — MinIO اجرا نشده (تا حدی با ADR-0012)؛ در انتظار تصمیم (ADR-0014) | [adr/0007-markdown-in-db.md](adr/0007-markdown-in-db.md) |
 | 0008 | GitHub Flow + Conventional Commits (بازنگری از GitFlow) | ✅ ACCEPTED — اعمال در P2 | [adr/0008-gitflow-going-forward.md](adr/0008-gitflow-going-forward.md) |
-| 0009 | تست: Vitest (واحد + یکپارچگی سبک)، E2E در P4.6 | ✅ ACCEPTED | [adr/0009-testing-strategy.md](adr/0009-testing-strategy.md) |
+| 0009 | تست: Vitest (واحد + یکپارچگی سبک) + E2E | ✅ ACCEPTED — E2E اجرا شد (P8) | [adr/0009-testing-strategy.md](adr/0009-testing-strategy.md) |
 | 0010 | CI: node_modules به‌صورت release artifact (تحریم خروجی رانرها) | ✅ ACCEPTED — بازگشت پس از ۷ اجرای پایدار | [adr/0010-ci-install-reliability.md](adr/0010-ci-install-reliability.md) |
 | 0011 | تغییر نام پروژه به «مُنت‌آموز / MontAmooz» | ✅ ACCEPTED | [adr/0011-project-rename-to-montamooz.md](adr/0011-project-rename-to-montamooz.md) |
 | 0012 | پیوست‌های PDF/Word برای جزوه‌ها (supersedes ADR-0007) | ✅ ACCEPTED | [adr/0012-pamphlet-attachments.md](adr/0012-pamphlet-attachments.md) |
 | 0013 | سیاست هویت Contributor و web-flow (هویت مرجع + allowlist + mailmap) | ✅ ACCEPTED | [adr/0013-contributor-identity-and-web-flow-policy.md](adr/0013-contributor-identity-and-web-flow-policy.md) |
+| 0014 | قرارداد شماره‌گذاری مراحل (ادامهٔ ترتیبی سری Pn؛ ثبت واگرایی planned-vs-executed) | ✅ ACCEPTED | [adr/0014-stage-numbering-convention.md](adr/0014-stage-numbering-convention.md) |
 
 ---
 

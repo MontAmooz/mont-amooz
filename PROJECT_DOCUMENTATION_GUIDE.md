@@ -12,8 +12,8 @@
 | Documentation rules | `PROJECT_DOCUMENTATION_GUIDE.md` (this file) | ownership + update triggers |
 | Product requirements | `docs/PRODUCT_SPEC.md` | implemented vs planned capabilities, kept separate |
 | Product-level roadmap (phases) | `docs/ROADMAP.md` | historical product plan (2026-10-30 snapshot); execution state always read from `PROJECT_STATUS.md` |
-| Architecture | `docs/ARCHITECTURE.md` | as-built; see its staleness notes in `docs/ROADMAP_RECOVERY.md §7.4` until reconciled |
-| Historical decisions | `docs/DECISIONS.md` + `docs/adr/` | the task template's `docs/DECISIONS/` corresponds to these two (the repo's actual structure — 13 ADR files + index); no `docs/DECISIONS/` directory exists or is created |
+| Architecture | `docs/ARCHITECTURE.md` | as-built (reconciled 2026-11-28, task `P23`) |
+| Historical decisions | `docs/DECISIONS.md` + `docs/adr/` | the task template's `docs/DECISIONS/` corresponds to these two (the repo's actual structure — 14 ADR files + index); no `docs/DECISIONS/` directory exists or is created |
 | Agent instructions | `AGENTS.md` | entry point for coding agents; includes the Contributor Identity Rule |
 | Testing | `docs/TESTING.md` | only commands that actually exist |
 | Deployment | `docs/DEPLOYMENT.md` | design doc — nothing deployed yet |
@@ -22,8 +22,8 @@
 | Development setup | `docs/DEVELOPMENT.md` | environment, DB gotchas, `/tmp` hazard |
 | Git strategy | `docs/GIT-STRATEGY.md` | GitHub Flow, commits, releases |
 | Branding / contributing / conduct | `docs/BRAND.md`, `docs/CONTRIBUTING.md`, `docs/CODE_OF_CONDUCT.md`, `docs/USER-GUIDE-*.md` | product-side docs |
-| Version history | `CHANGELOG.md` | currently stale past v0.2.0 — see recovery §7.2 |
-| Archived planning (read-only) | `docs/archive/2026-10-pre-reconciliation/` | superseded; never cited as current truth |
+| Version history | `CHANGELOG.md` | current as of 0.3.0 (2026-11-28, task `P23`) |
+| Archived planning (read-only) | `docs/archive/` | `2026-10-pre-reconciliation/` (superseded vision stack) + `2026-11-post-recovery/` (retired agent-instruction file, archived 2026-11-28); never cited as current truth |
 
 ## 2. Update Triggers (mandatory)
 

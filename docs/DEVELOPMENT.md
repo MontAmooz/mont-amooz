@@ -71,7 +71,7 @@ bun prisma studio        # مرورگر داده
 
 - **دستی:** curl برای API (نمونه‌ها در SECURITY/ARCHITECTURE) + مرورگر برای UI
 - **کلاس دو-نشسته:** دو پنجرهٔ مرورگر، ورود با `montajebii@montamooz.ir` و `hossein@montamooz.ir`، رفتن به `#/session/<CODE>`، تست چت + تخته
-- تست‌های خودکار: برنامه‌ریزی در P3 — تا آن موقع تست بنویسید ولی برای CI صبر کنید
+- تست‌های خودکار: واحدها + یکپارچگی با `bun run test` (۵۰۰ تست / ۳۷ فایل) و مرورگری با `bunx playwright test` (۷۹ سناریو) — فرمان‌ها و وضعیت: [TESTING.md](TESTING.md)
 
 ## عیب‌یابی
 
@@ -95,7 +95,7 @@ curl -s localhost:3000/api/v1/stats                                     # pamphl
 | login همیشه 401 با دادهٔ موجود | سرور به دیتابیس خالی وصل است | تلهٔ مسیر DB بالا |
 | بلیت اتاق reject می‌شود | `AUTH_SECRET` دو سرویس یکی نیست | یکی‌شان کنید |
 | `sqlitesyntaxerror` بعد از تغییر اسکیما | کلاینت قدیمی | `bun prisma generate` + ری‌استارت dev |
-| lint خطای `set-state-in-effect` می‌دهد | قواعد سختگیرانهٔ React Compiler فعلی | شناخته‌شده — در P3 اصلاح می‌شود (فعلاً ۴ مورد) |
+| lint خطای `set-state-in-effect` می‌دهد | قواعد سختگیرانهٔ React Compiler فعلی | شناخته‌شده — دیگر رخ نمی‌دهد (lint ۰ خطا از 2026-11-28) |
 
 ### ⚠️ `/tmp` Disk Exhaustion — The Silent Test Killer
 
@@ -120,7 +120,7 @@ df -h /tmp                          # verify ≥2GB
 ## قراردادهای کدنویسی
 
 - فرانت: کامپوننت React + TypeScript، **RTL همیشه**، بدون استایل inline (BRAND.md §8)، فقط پالت برند (#DD614C و خانواده‌اش — **آبی/ایندیگو ممنوع**)
-- بک: APIها زیر `/api/v1/*`، خطا `{error: "فارسی"}`، کوکی نشست `oeg_session`
+- بک: APIها زیر `/api/v1/*`، خطا `{error: "فارسی"}`، کوکی نشست `ma_session`
 - مالکیت فایل‌ها: `src/app/api/**` بک‌اند، `src/components/edu/*.tsx` ویوها، `src/lib/{constants,types,format,diff}.ts` مشترک — **دست نزنید**: `src/app/layout.tsx`, `globals.css`, `page.tsx` بدون هماهنگی
 - برای تصمیم‌های فنی: اول [DECISIONS.md](DECISIONS.md) و [adr/](adr/) — واگرایی خاموش ممنوع
 

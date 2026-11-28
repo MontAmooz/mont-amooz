@@ -8,7 +8,7 @@
 |---|---|---|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | برنامه‌نویس | معماری **فعلی** (واقعیت کد، نه آرزو) |
 | [DECISIONS.md](DECISIONS.md) | همه | فهرست تصمیم‌های فنی پذیرفته‌شده |
-| [adr/](adr/) | برنامه‌نویس، نگهدارنده | ۱۳ سند ADR با دلیل و پیامد |
+| [adr/](adr/) | برنامه‌نویس، نگهدارنده | ۱۴ سند ADR با دلیل و پیامد |
 | [ROADMAP.md](ROADMAP.md) | همه | فازهای انجام‌شده و پیش‌رو |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | مشارکت‌کننده | مسیر مشارکت هر نقش |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | برنامه‌نویس | محیط توسعه، گردش کار DB، عیب‌یابی |
@@ -18,7 +18,7 @@
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | همه | کد رفتاری |
 | [../SECURITY.md](../SECURITY.md) | امنیت | گزارش آسیب‌پذیری |
 | [../CHANGELOG.md](../CHANGELOG.md) | همه | تاریخچهٔ نسخه‌ها |
-| [archive/](archive/) | مورخ 😄 | اسناد چشم‌انداز اولیه (فقط‌خواندنی) |
+| [archive/](archive/) | مورخ 😄 | اسناد چشم‌انداز اولیه (2026-10) + نسخهٔ بازنشستهٔ فایل راهنمای عامل توسعه (2026-11) — فقط‌خواندنی |
 | [../PROJECT_STATUS.md](../PROJECT_STATUS.md) | نگهدارنده، عامل توسعه | وضعیت اجرایی پروژه، Task Registry، Session Handoff |
 | [../DEVELOPMENT_ORCHESTRATION_PROTOCOL.md](../DEVELOPMENT_ORCHESTRATION_PROTOCOL.md) | نگهدارنده، عامل توسعه | پروتکل چرخهٔ کار، گیت‌ها، قالب پرامپت |
 | [../PROJECT_DOCUMENTATION_GUIDE.md](../PROJECT_DOCUMENTATION_GUIDE.md) | همه | مسئولیت هر سند و قواعد به‌روزرسانی |
