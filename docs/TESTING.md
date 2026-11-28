@@ -80,7 +80,7 @@ Known documented self-matches (not violations): the blocklists themselves (`.git
 | Local pre-commit | manual run of `scripts/check-contributors.sh` (mandatory per `DEVELOPMENT_ORCHESTRATION_PROTOCOL.md §9`) | ✅ `.githooks/commit-msg` active |
 | CI | ✅ **wired** (2026-11-28, task `P22`): `.github/workflows/hygiene.yml` — job `hygiene` runs the script with `fetch-depth: 0` on every PR to `main` and every push to `main` | ✅ `commit-lint.yml` |
 
-Both CI layers must stay green alongside `scan`,`quality`,`test`,`e2e`; the `hygiene` check is intended as a required check for `main` (branch protection).
+Both CI layers must stay green alongside `scan`,`quality`,`test`,`e2e`. `hygiene` is intended as a required check for `main`; adding it to the branch-protection list is a one-time UI action (Settings → Branches → Required status checks, context `hygiene`) — automation tokens hold Administration read but not write, so agents cannot toggle it via API (recorded in `PROJECT_STATUS.md §J`).
 
 ## 5. Recorded Gate Pattern (stage acceptance)
 
