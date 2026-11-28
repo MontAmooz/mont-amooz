@@ -8,7 +8,7 @@
 |---|---|---|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | برنامه‌نویس | معماری **فعلی** (واقعیت کد، نه آرزو) |
 | [DECISIONS.md](DECISIONS.md) | همه | فهرست تصمیم‌های فنی پذیرفته‌شده |
-| [adr/](adr/) | برنامه‌نویس، نگهدارنده | ۸ سند ADR با دلیل و پیامد |
+| [adr/](adr/) | برنامه‌نویس، نگهدارنده | ۱۳ سند ADR با دلیل و پیامد |
 | [ROADMAP.md](ROADMAP.md) | همه | فازهای انجام‌شده و پیش‌رو |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | مشارکت‌کننده | مسیر مشارکت هر نقش |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | برنامه‌نویس | محیط توسعه، گردش کار DB، عیب‌یابی |
@@ -19,6 +19,14 @@
 | [../SECURITY.md](../SECURITY.md) | امنیت | گزارش آسیب‌پذیری |
 | [../CHANGELOG.md](../CHANGELOG.md) | همه | تاریخچهٔ نسخه‌ها |
 | [archive/](archive/) | مورخ 😄 | اسناد چشم‌انداز اولیه (فقط‌خواندنی) |
+| [../PROJECT_STATUS.md](../PROJECT_STATUS.md) | نگهدارنده، عامل توسعه | وضعیت اجرایی پروژه، Task Registry، Session Handoff |
+| [../DEVELOPMENT_ORCHESTRATION_PROTOCOL.md](../DEVELOPMENT_ORCHESTRATION_PROTOCOL.md) | نگهدارنده، عامل توسعه | پروتکل چرخهٔ کار، گیت‌ها، قالب پرامپت |
+| [../PROJECT_DOCUMENTATION_GUIDE.md](../PROJECT_DOCUMENTATION_GUIDE.md) | همه | مسئولیت هر سند و قواعد به‌روزرسانی |
+| [TESTING.md](TESTING.md) | برنامه‌نویس | فرمان‌های تست + Hygiene Tests |
+| [PRODUCT_SPEC.md](PRODUCT_SPEC.md) | همه | قابلیت‌های پیاده‌شده در برابر برنامه‌ریزی‌شده |
+| [ROADMAP_RECOVERY.md](ROADMAP_RECOVERY.md) | نگهدارنده | بازیابی نقشهٔ راه تاریخی + گزارش Contributor Hygiene Audit |
+
+> **افزوده در 2026-11-28** (تسک مستندسازی/bootstrap): سه سند ریشهٔ `PROJECT_STATUS.md` / `DEVELOPMENT_ORCHESTRATION_PROTOCOL.md` / `PROJECT_DOCUMENTATION_GUIDE.md` مرجع وضعیت اجرایی و گردش‌کار هستند؛ `docs/ROADMAP_RECOVERY.md` شواهد بازیابی نقشهٔ راه و ممیزی هویت Contributorها را نگه می‌دارد.
 
 ## مسیر پیشنهادی بر اساس نقش
 
