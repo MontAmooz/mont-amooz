@@ -1,0 +1,8 @@
+# .mailmap — display unification only. Mailmap never changes commit objects
+# (no SHA, author/committer data, or date is altered) — it only affects how
+# identities are DISPLAYED by mailmap-aware tooling (git log %aN/%aE, shortlog).
+# Policy: docs/adr/0013-contributor-identity-and-web-flow-policy.md (2026-11-28).
+#
+# Map the accepted historical identity zwork <zwork@local> (commit f8cea70,
+# 2026-11-03, landed via PR #9) to the canonical maintainer identity:
+Mohammadreza Montajebi <mohammad.montajebii@gmail.com> zwork <zwork@local>

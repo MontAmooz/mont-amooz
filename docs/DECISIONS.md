@@ -22,6 +22,7 @@
 | 0010 | CI: node_modules به‌صورت release artifact (تحریم خروجی رانرها) | ✅ ACCEPTED — بازگشت پس از ۷ اجرای پایدار | [adr/0010-ci-install-reliability.md](adr/0010-ci-install-reliability.md) |
 | 0011 | تغییر نام پروژه به «مُنت‌آموز / MontAmooz» | ✅ ACCEPTED | [adr/0011-project-rename-to-montamooz.md](adr/0011-project-rename-to-montamooz.md) |
 | 0012 | پیوست‌های PDF/Word برای جزوه‌ها (supersedes ADR-0007) | ✅ ACCEPTED | [adr/0012-pamphlet-attachments.md](adr/0012-pamphlet-attachments.md) |
+| 0013 | سیاست هویت Contributor و web-flow (هویت مرجع + allowlist + mailmap) | ✅ ACCEPTED | [adr/0013-contributor-identity-and-web-flow-policy.md](adr/0013-contributor-identity-and-web-flow-policy.md) |
 
 ---
 
