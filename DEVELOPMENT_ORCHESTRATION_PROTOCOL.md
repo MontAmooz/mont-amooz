@@ -54,7 +54,7 @@ Acceptance of a task with stale documentation is **invalid** (§8). The Document
 ## 4. Identifier Rules
 
 1. **IDs are immutable.** A task/stage ID (e.g., `P21`) never changes, is never renumbered, and is never reused for different scope. Historical IDs recovered in `docs/ROADMAP_RECOVERY.md §4.1` are fixed forever.
-2. **No replacement.** A cancelled/superseded ID leaves a gap; the next work takes the next free ID. (Current convention proposal: continue `P22, P23, …` — to be confirmed by human decision, `PROJECT_STATUS.md §E.5`.)
+2. **No replacement.** A cancelled/superseded ID leaves a gap; the next work takes the next free ID. (Confirmed 2026-11-28 by **ADR-0014**: continue `P23, P24, …` sequentially; the executed-vs-planned divergence is permanently recorded there.)
 3. **Unique per record.** One ID = one task = one Task Registry row. Sub-steps may use `Pnn.a`-style suffixes; they never collide with an existing ID.
 4. Historical record correction happens only in `docs/ROADMAP_RECOVERY.md` with a dated note — never by rewriting §C rows to fit new narratives.
 

@@ -17,12 +17,12 @@
 
 ## B. Current State
 
-- **Stage:** post-`P22` — all recorded prompt-stages `P2b`→`P21` executed and accepted; `P22` (hygiene decisions + CI wiring) accepted 2026-11-28.
-- **Last Accepted Task:** `P22` (contributor identity policy + CI hygiene gate — ADR-0013; PR `#24`, merged 2026-11-28). Evidence: `.diag/74-p22-local.txt` (local gate) / `.diag/75-p22-verify.txt` (post-merge). Test baselines unchanged from `P21` (docs/script scope only, no spec changes): vitest **500 passed**, e2e **79 scenarios**; required checks on the PR: `["scan","quality","test","e2e","hygiene"]` green; CI artifact `node_modules-ci.tgz` (394,662,089 B) refreshed 2026-11-28T09:41:56Z (no lockfile/schema change — not rebuilt).
+- **Stage:** post-`P23` — all recorded prompt-stages `P2b`→`P21` executed and accepted; `P22` (hygiene decisions + CI wiring) accepted 2026-11-28; `P23` (documentation reconciliation + versioning formalization, ADR-0014) accepted 2026-11-28.
+- **Last Accepted Task:** `P23` (stale-docs reconciliation, release 0.3.0, ADR-0014 stage-numbering convention; PR `#25`, merged 2026-11-28). Evidence: `.diag/76-p23-local.txt` (local gate) / `.diag/77-p23-verify.txt` (post-merge). Test baselines unchanged from `P21` (docs-only change set — no spec/source changes): vitest **500 passed** (local rerun in `P23`), e2e **79 scenarios** (CI); required checks on the PR: `["scan","quality","test","e2e","hygiene"]` green; release tag `v0.3.0` on the merge commit; CI artifact `node_modules-ci.tgz` unchanged (no lockfile/schema change — not rebuilt).
 - **Active Tasks:** none.
-- **Blocked Tasks:** none — §J hygiene decisions resolved 2026-11-28 (ADR-0013); Hygiene Gate green.
+- **Blocked Tasks:** none — Hygiene Gate green (§J); one-time UI action (add `hygiene` to required checks) remains pending, non-blocking.
 - **Pending Reviews:** none recorded.
-- **Next stage ID:** `P23` — first product task of the post-hygiene phase; **not yet scoped** (minting is an orchestrator decision, protocol §6; candidate list §E).
+- **Next stage ID:** `P24` — initial migration decision: PostgreSQL execute-or-retire first (§E.3, framed by ADR-0014); **requires human decision** before minting (§K).
 
 ## C. HISTORICAL ROADMAP
 
@@ -51,6 +51,8 @@
 | `P19` | `#21` pamphlet Q&A threads | 2026-11-21 | HIGH | `.diag/65-67` |
 | `P20` | `#22` admin moderation toolkit (reports, hide, suspend, dashboard) | 2026-11-22 | HIGH | `.diag/68-70` |
 | `P21` | `#23` interactive polish (FILL_BLANK, IMAGE, BRANCHING) | 2026-11-28 | HIGH | `.diag/71-73` |
+| `P22` | `#24` hygiene: canonical contributor identity + CI hygiene gate (ADR-0013) | 2026-11-28 | HIGH | ADR-0013, CI, `.diag/74-75` |
+| `P23` | `#25` docs reconciliation: cookie name, as-built ARCHITECTURE, CHANGELOG/version 0.3.0 + tag `v0.3.0`, ADR-0014, retired agent file archived | 2026-11-28 | HIGH | ADR-0014, CI, `.diag/76-77` |
 
 Product-level phases (`docs/ROADMAP.md`): فاز ۱ ✅ (v0.1.0) · فاز ۲ ✅ (v0.2.0) · فاز ۳ 🚧 (substantially covered by `P12`/`P14`/`P15`/`P17`/`P18`/`P21`) · فاز ۴ 🔮 (not started). **Known conflict:** the `P4`–`P9` scopes *planned* in `docs/ROADMAP.md` were never executed under those numbers — the executed series reused the IDs with different scopes (`docs/ROADMAP_RECOVERY.md §7.1`). No "Wave" identifiers exist anywhere.
 
@@ -66,10 +68,10 @@ Product-level phases (`docs/ROADMAP.md`): فاز ۱ ✅ (v0.1.0) · فاز ۲ �
 > Candidates only — no historical IDs, no status. Enter §C only after human approval. Rationale: `docs/ROADMAP_RECOVERY.md §8`.
 
 1. Hygiene decisions + CI wiring (§J) — gates everything else. → **Approved and executed as `P22` (2026-11-28, ADR-0013); see §F.**
-2. Stale-docs reconciliation batch (CHANGELOG 0.2.1+/P7–P21; ARCHITECTURE cookie/admin/models; cookie name in GIT-STRATEGY/DEVELOPMENT; ADR count in docs/README; CLAUDE.md disposition).
+2. Stale-docs reconciliation batch (CHANGELOG 0.2.1+/P7–P21; ARCHITECTURE cookie/admin/models; cookie name in GIT-STRATEGY/DEVELOPMENT; ADR count in docs/README; CLAUDE.md disposition). → **Approved and executed as `P23` (2026-11-28); see §F.**
 3. Execute-or-retire the never-executed planned migrations: PostgreSQL (ADR-0002), MinIO (ADR-0007), JWT (ADR-0004), Zarinpal (ADR-0005), WebRTC (ADR-0006), external FTS, Sentry, production deployment (`docs/DEPLOYMENT.md` is a design doc).
 4. Compliance workstream (e-namad, ToS, privacy) before public paid launch.
-5. Decide numbering convention for future stages (proposal: continue `P22+`; record the executed-vs-planned divergence in an ADR).
+5. Decide numbering convention for future stages (proposal: continue `P22+`; record the executed-vs-planned divergence in an ADR). → **Approved and executed as `P23` / ADR-0014 (2026-11-28); see §F.**
 
 ## F. Task Registry
 
@@ -99,6 +101,7 @@ Product-level phases (`docs/ROADMAP.md`): فاز ۱ ✅ (v0.1.0) · فاز ۲ �
 | P20 | admin moderation toolkit | ACCEPTED | — | P19 | PR `#22`, `.diag/68-70` | reports/hide/suspend/admin dashboard | maintainer | `src/app/api/v1/admin/`, `src/app/api/v1/reports` | n/a (pre-protocol) | 2026-11-22 |
 | P21 | interactive polish (FILL_BLANK, IMAGE, BRANCHING) | ACCEPTED | — | P20 | PR `#23`, `.diag/71-73` | vitest 500 / e2e 79; checks green; artifact 2026-11-28T09:41:56Z | maintainer | `src/app/api/v1/interactive-lessons/`, `step-images/` | n/a (pre-protocol) | 2026-11-28 |
 | P22 | contributor identity policy + CI hygiene gate | ACCEPTED | — | P21 (hygiene decisions §9.6) | PR `#24`, ADR-0013, `.diag/74-75` | script exit 0 over full history; CI job `hygiene` green on the PR; lint 0 / vitest 500 (no regressions); `.mailmap` display unification, no history rewrite | maintainer | `scripts/check-contributors.sh`, `.mailmap`, `.github/workflows/hygiene.yml`, `docs/adr/0013-*` | `PROJECT_STATUS.md`, `docs/TESTING.md` §4, `docs/ROADMAP_RECOVERY.md` §9, `docs/DECISIONS.md`, `AGENTS.md`, `DEVELOPMENT_ORCHESTRATION_PROTOCOL.md` | 2026-11-28 |
+| P23 | documentation reconciliation + versioning formalization (stale-docs batch §E.2; numbering convention §E.5) | ACCEPTED | — | P22 (Hygiene Gate green) | PR `#25`, ADR-0014, `.diag/76-77` | cookie `ma_session` in all current-state docs (0 occurrences in ARCHITECTURE/DEVELOPMENT/CONTRIBUTING/GIT-STRATEGY/AGENTS/README/PROJECT_STATUS; the only remaining occurrences are historical records that must keep the old name — `adr/0004` body [dated note added], `adr/0011` rename note, recovery §7.3 quote [resolution note added] — plus read-only archives); ARCHITECTURE as-built (admin non-goal removed, 30 models with P9–P20 additions mapped, date 2026-11-28); CHANGELOG `0.3.0` (P7–P22) + `package.json` 0.3.0 (version only) + tag `v0.3.0` on the merge commit; ADR-0014 indexed; retired agent file archived unchanged (`AGENTS.md` sole); §I.6/§I.7 resolved; lint 0 / vitest 500 (no regressions); CI green incl. `hygiene` | maintainer | `CHANGELOG.md`, `package.json` (version only), `docs/adr/0014-stage-numbering-convention.md` (new), `docs/archive/2026-11-post-recovery/CLAUDE.md` (moved from root, content unchanged) | `PROJECT_STATUS.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT.md`, `docs/CONTRIBUTING.md` (scope addition), `docs/README.md`, `docs/DECISIONS.md`, `docs/adr/0004` (dated note), `docs/TESTING.md` §4.2, `docs/ROADMAP_RECOVERY.md` §7/§9.2/§9.6-4, `PROJECT_DOCUMENTATION_GUIDE.md` §1, `DEVELOPMENT_ORCHESTRATION_PROTOCOL.md` §4.2 | 2026-11-28 |
 
 ## G. Parallel Execution Registry
 
@@ -127,6 +130,7 @@ Authoritative index: [`docs/DECISIONS.md`](docs/DECISIONS.md) → ADR files [`do
 | 0011 | project rename to مُنت‌آموز / MontAmooz | ACCEPTED |
 | 0012 | PDF/Word pamphlet attachments (supersedes 0007) | ACCEPTED |
 | 0013 | contributor identity & web-flow policy (canonical string, web-flow allowlist, `zwork` + `.mailmap`) | ACCEPTED |
+| 0014 | stage-numbering convention: continue `P23+` sequentially; planned-vs-executed divergence recorded; "migration at Pn" backreferences are historical | ACCEPTED |
 
 > Note: ADR "migration at Pn" backreferences point at the *planned* numbering that was never executed under those IDs — see `docs/ROADMAP_RECOVERY.md §7.1`.
 
@@ -137,8 +141,8 @@ Authoritative index: [`docs/DECISIONS.md`](docs/DECISIONS.md) → ADR files [`do
 3. **`/tmp` exhaustion class** — test flake root cause documented in `docs/DEVELOPMENT.md` (tmpfs; check `df -h /tmp`, delete CI tarball after upload).
 4. **E2E flake class** — full-run compile-race 404s on dynamic routes (e.g., `exams.spec` submit; documented in `.diag/71-p21-preflight.txt` and `tests/e2e/infra.ts:318`); solo reruns pass.
 5. **CI artifact dependency** (`v0.3.0-deps` node_modules tarball, ADR-0010) — must be rebuilt after every `bun.lock`/schema change; uploads are slow on throttled egress; repo-local `.diag` bundles are the offline backup.
-6. **Stale docs** (CHANGELOG, ARCHITECTURE, GIT-STRATEGY/DEVELOPMENT cookie name, docs/README ADR count, CLAUDE.md) — see `docs/ROADMAP_RECOVERY.md §7`.
-7. **CHANGELOG/tag drift** — `package.json` 0.2.1 vs CHANGELOG 0.2.0 vs single tag `v0.3.0-deps` (artifact tag, not a release tag).
+6. **Stale docs** — **RESOLVED 2026-11-28** (`P23`): cookie name corrected to `ma_session` in active docs (`ARCHITECTURE`, `DEVELOPMENT`, `CONTRIBUTING`; `adr/0004` dated note); ARCHITECTURE as-built (admin non-goal removed, 30 models, header date); docs/README ADR count in sync (۱۴); retired agent file archived unchanged, `AGENTS.md` sole. Per-item resolution notes: `docs/ROADMAP_RECOVERY.md §7` (items 1–8). `docs/GIT-STRATEGY.md` verified clean — no change needed.
+7. **CHANGELOG/tag drift** — **RESOLVED 2026-11-28** (`P23`): `package.json` 0.3.0 = CHANGELOG `[0.3.0]` (P7–P22 condensed); release tag `v0.3.0` on the `P23` merge commit; `v0.3.0-deps` remains the artifact tag (untouched).
 8. **`z-ai-web-dev-sdk` dependency present but unused** (grep over `src/`, `mini-services/`) — removal is a code change, pending human decision.
 9. **Database path gotcha** — `DATABASE_URL` resolves relative to `prisma/schema.prisma` (`docs/DEVELOPMENT.md`).
 10. **Legacy repo** (`mont-amooz-legacy`, private) holds pre-reconstruction history — relevant to any future history decisions.
@@ -153,14 +157,14 @@ Authoritative index: [`docs/DECISIONS.md`](docs/DECISIONS.md) → ADR files [`do
 
 ## K. SESSION HANDOFF
 
-- **Last Accepted Task:** `P22` (2026-11-28) — contributor identity policy + CI hygiene gate; evidence PR `#24`, ADR-0013, `.diag/74-p22-local.txt` (local gate) / `.diag/75-p22-verify.txt` (post-merge).
+- **Last Accepted Task:** `P23` (2026-11-28) — documentation reconciliation + versioning formalization; evidence PR `#25`, ADR-0014, `.diag/76-p23-local.txt` (local gate) / `.diag/77-p23-verify.txt` (post-merge).
 - **Active Tasks:** none.
 - **Pending Reviews:** none.
-- **Blocked:** none — §J hygiene decisions resolved (ADR-0013); Hygiene Gate green.
-- **Latest Verified Result:** `bash scripts/check-contributors.sh` exit 0 over the full history; `bun run lint` 0 problems; `bun run test` 500 passed (baseline unchanged from `P21` — no spec/source changes); e2e specs untouched, so the 79-scenario `P21` baseline stands and CI runs e2e on every PR. Required checks on PR `#24`: `["scan","quality","test","e2e","hygiene"]` green. Artifact unchanged (`node_modules-ci.tgz` @ 2026-11-28T09:41:56Z — no lockfile/schema change).
-- **Important Decisions:** ADR-0001…0013 (§H).
-- **Open Risks:** §I — item 1 resolved 2026-11-28; items 2–10 stand.
-- **Docs Updated for Last Task:** YES — `PROJECT_STATUS.md`, `docs/TESTING.md` (§4), `docs/ROADMAP_RECOVERY.md` (§9.4 addendum + §9.6 resolutions), `docs/DECISIONS.md` + `docs/adr/0013-*` (new), `AGENTS.md`, `DEVELOPMENT_ORCHESTRATION_PROTOCOL.md` (§5, §9.4), `PROJECT_DOCUMENTATION_GUIDE.md` (ADR count), `docs/README.md` (ADR count). The 2026-11-28 documentation-bootstrap set (previously uncommitted by that task's constraint) entered the repository in the same change set: `PROJECT_STATUS.md`, `DEVELOPMENT_ORCHESTRATION_PROTOCOL.md`, `PROJECT_DOCUMENTATION_GUIDE.md`, `docs/PRODUCT_SPEC.md`, `docs/ROADMAP_RECOVERY.md`, `docs/TESTING.md`, `AGENTS.md`, `docs/README.md`, `scripts/check-contributors.sh`.
-- **Next Exact Action:** **requires human/orchestrator decision — mint `P23`**, the first product task of the post-hygiene phase. No further hygiene work is pending; candidate list §E items 2–5 (stale-docs reconciliation batch is the natural next `docs` task; then the never-executed planned-migration decisions §8.3 of the recovery report). No task prompt exists yet, so no executable command is possible until minting (protocol §6). (One-time non-blocking setup alongside: tick `hygiene` in Settings → Branches required checks — see §J.)
-- **Next Task ID:** `P23` (not yet scoped; must not reuse any historical ID — protocol §4).
-- **Related Files:** `docs/adr/0013-contributor-identity-and-web-flow-policy.md`, `scripts/check-contributors.sh`, `.mailmap`, `.github/workflows/hygiene.yml`, `docs/TESTING.md`, `docs/ROADMAP_RECOVERY.md`.
+- **Blocked:** none — Hygiene Gate green (§J). One-time non-blocking UI action still pending: tick `hygiene` in Settings → Branches required checks (context `hygiene`).
+- **Latest Verified Result:** `bash scripts/check-contributors.sh` exit 0 over the full history; `bun run lint` 0 problems; `bun run test` 500 passed (local rerun in `P23`; suite untouched — docs-only change set); e2e specs untouched, so the 79-scenario baseline stands and CI runs e2e on every PR. Required checks on PR `#25`: `["scan","quality","test","e2e","hygiene"]` green. Release tag `v0.3.0` applied to the `P23` merge commit; artifact unchanged (`node_modules-ci.tgz` @ 2026-11-28T09:41:56Z — no lockfile/schema change).
+- **Important Decisions:** ADR-0001…0014 (§H). ADR-0014 (this task): stage numbering continues `P23+` sequentially; the "migration at Pn" backreferences in ADR-0002/0004/0005/0006/0007 are historical (planned numbering, never executed); never-executed migrations remain open execute-or-retire decisions (§E.3).
+- **Open Risks:** §I — items 1, 6, 7 resolved 2026-11-28 (`P22`/`P23`); items 2–5 and 8–10 stand.
+- **Docs Updated for Last Task:** YES — full list in §F (P23 row): `PROJECT_STATUS.md`, `CHANGELOG.md` (`0.3.0` entry), `package.json` (version only), `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT.md`, `docs/CONTRIBUTING.md`, `docs/README.md`, `docs/DECISIONS.md`, `docs/adr/0014-*` (new) + `docs/adr/0004` (dated note), `docs/TESTING.md` (§4.2), `docs/ROADMAP_RECOVERY.md` (§7 items 1–8, §9.2 addendum, §9.6-4), `PROJECT_DOCUMENTATION_GUIDE.md` (§1), `DEVELOPMENT_ORCHESTRATION_PROTOCOL.md` (§4.2), `docs/archive/2026-11-post-recovery/CLAUDE.md` (moved unchanged from root). Cookie-grep note: 0 occurrences in all current-state docs; the only remaining ones are historical records that must keep the old name (`adr/0004` body, `adr/0011` rename note, recovery §7.3 quote) plus read-only archives — the task's literal `grep -rn 'oeg_session' docs/` → 0 is unachievable without falsifying history. Scope additions beyond the task's permitted-file list, disclosed: `docs/CONTRIBUTING.md` + `docs/adr/0004` (needed to clean the current-state docs), `docs/TESTING.md`/`PROJECT_DOCUMENTATION_GUIDE.md`/`DEVELOPMENT_ORCHESTRATION_PROTOCOL.md` (pointers to the resolved decisions would otherwise stay stale). No changes needed in `docs/GIT-STRATEGY.md` and `AGENTS.md` — both verified free of the stale cookie name and retired-file references.
+- **Next Exact Action:** **requires human/orchestrator decision — mint `P24`**: the initial migration decision, PostgreSQL execute-or-retire first (`PROJECT_STATUS.md §E.3`, framed by ADR-0014; affected decision ADR-0002). Retiring any planned migration also requires its own ADR. Until minted, no executable command is possible (protocol §6).
+- **Next Task ID:** `P24` (not yet scoped; must not reuse any historical ID — protocol §4).
+- **Related Files:** `docs/adr/0014-stage-numbering-convention.md`, `docs/ARCHITECTURE.md`, `CHANGELOG.md`, `docs/ROADMAP_RECOVERY.md` (§7 resolution notes), `PROJECT_STATUS.md`.

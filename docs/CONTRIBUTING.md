@@ -115,7 +115,7 @@
 (پشتهٔ فعلی: Next.js 16 + TypeScript + Prisma + SQLite — ببینید [DECISIONS.md](./DECISIONS.md) و [adr/](./adr/).)
 
 - برای فرانت‌اند: کامپوننت‌های React با TypeScript، رابط کاربری کاملاً RTL، بدون استایل inline، فقط پالت برند ([BRAND.md](./BRAND.md)).
-- برای بک‌اند: API ها زیر `/api/v1/*`، خطا با `{ "error": "پیام فارسی" }`، نشست با کوکی `oeg_session` — قرارداد کامل در [ARCHITECTURE.md](./ARCHITECTURE.md).
+- برای بک‌اند: API ها زیر `/api/v1/*`، خطا با `{ "error": "پیام فارسی" }`، نشست با کوکی `ma_session` — قرارداد کامل در [ARCHITECTURE.md](./ARCHITECTURE.md).
 - حتماً برای فیچرهای جدید تست دستی (curl + مرورگر) انجام دهید؛ تست خودکار از P3.
 - اطلاعات حساس (کلیدهای API، رمزها) را در کد کامیت نکن — مقادیر فقط از `.env` (الگو: `.env.example`).
 - پیش از پیشنهاد تغییر فنی، [DECISIONS.md](./DECISIONS.md) و ADRها را بخوان؛ انحراف خاموش ممنوع.

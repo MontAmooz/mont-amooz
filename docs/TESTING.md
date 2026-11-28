@@ -71,7 +71,7 @@ Manual scan of the tracked working tree (useful before pushing doc changes):
 git ls-files -z | xargs -0 grep -inE 'claude|chatgpt|gpt-[0-9]|openai|anthropic|copilot|cursor[- ]ai|gemini|codex|aider|windsurf|devin|z-ai'
 ```
 
-Known documented self-matches (not violations): the blocklists themselves (`.githooks/commit-msg`, `.github/workflows/commit-lint.yml`, `docs/GIT-STRATEGY.md §3` — naming the banned tools is the control's function), the tracked harness file `CLAUDE.md` (disposition pending — `docs/ROADMAP_RECOVERY.md §9.6-4`), and the unused dependency `z-ai-web-dev-sdk` in `package.json` (removal is a code change, pending decision). Full findings table: `docs/ROADMAP_RECOVERY.md §9.2`.
+Known documented self-matches (not violations): the blocklists themselves (`.githooks/commit-msg`, `.github/workflows/commit-lint.yml`, `docs/GIT-STRATEGY.md §3` — naming the banned tools is the control's function), the archived agent-instruction files under `docs/archive/` (root copy retired 2026-11-28 to `docs/archive/2026-11-post-recovery/`; `AGENTS.md` is the single agent-instructions file — `docs/ROADMAP_RECOVERY.md §9.6-4` resolved), and the unused dependency `z-ai-web-dev-sdk` in `package.json` (removal is a code change, pending decision). Full findings table: `docs/ROADMAP_RECOVERY.md §9.2`.
 
 ### 4.3 Registration Status
 

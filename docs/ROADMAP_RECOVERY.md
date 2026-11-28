@@ -107,13 +107,21 @@ Recorded pattern (constant from `P4` to `P21`): preflight gate (git clean, `/tmp
 ## 7. Contradictions Discovered
 
 1. **P-number collision (most important).** `docs/ROADMAP.md` plans `P3`–`P9` with scopes (P3 tests, P4 PostgreSQL, P5 MinIO, P6 JWT, P7 CI/CD, P8 Sentry, P9 deployment). The executed series reused those IDs with **different scopes** (P4 CI-install reliability, P5 gate-only, P6 rename, P7 integration tests, P8 E2E, P9 attachments; then P10 auth-hardening, P11 notifications, …). Consequence: ADR plan-backreferences pointing at "migration in P4/P5/P6/P10/P11" (`adr/0002`, `0004`, `0005`, `0006`, `0007`; repeated in `docs/ARCHITECTURE.md` §9) **do not refer to executed work** — none of those migrations has happened. The executed scope of each Pn is in §4.1.
+   - ✅ **RESOLVED 2026-11-28 (task `P23`):** the divergence is permanently recorded in **ADR-0014** (stage-numbering convention: continue `P23, P24, …` sequentially; the "migration at Pn" backreferences are historical); `docs/DECISIONS.md` and `docs/ARCHITECTURE.md §9` annotated accordingly.
 2. **CHANGELOG is stale.** Last release entry is `0.2.0` (2026-10-21); `package.json` says `0.2.1`; the only Git tag is `v0.3.0-deps` (a CI-dependency artifact tag, not a release tag). All `P7`→`P21` work is absent from `CHANGELOG.md`.
+   - ✅ **RESOLVED 2026-11-28 (task `P23`):** `CHANGELOG.md` gained `## [0.3.0] — 2026-11-28` (P7–P21 condensed as "Operational Evolutions", P22 as "Health Gate"); `package.json` → `0.3.0`; release tag `v0.3.0` applied to the `P23` merge commit (the `v0.3.0-deps` artifact tag untouched).
 3. **Session cookie name drift.** `docs/ARCHITECTURE.md`, `docs/GIT-STRATEGY.md`, `docs/DEVELOPMENT.md`, `CLAUDE.md` say `oeg_session`; the code and preflight artifacts record `ma_session` (`src/lib/constants.ts:63`, verified in `.diag/56`, `.diag/59`).
+   - ✅ **RESOLVED 2026-11-28 (task `P23`):** active docs now document `ma_session` (`ARCHITECTURE.md`, `DEVELOPMENT.md`, `CONTRIBUTING.md`; `ADR-0004` carries a dated note). `GIT-STRATEGY.md` was verified to contain no occurrence (the file list in this item was itself partly stale). Archived docs retain the legacy name by design (historical record, read-only).
 4. **`docs/ARCHITECTURE.md` staleness.** Header date 2026-10-30 (file updated later); §10 lists "no admin panel" as a non-goal although the admin panel shipped in `P10`; model count "28" vs 30 `model` declarations in `prisma/schema.prisma` (`PamphletComment` P19, `Report` P20 added later).
+   - ✅ **RESOLVED 2026-11-28 (task `P23`):** header date 2026-11-28; "no admin panel" removed from §10; model map updated to 30 with the post-0.2.0 additions named (P9 attachments, P10 auth tokens, P11 notifications, P12/P14 exams, P19 `PamphletComment`, P20 `Report`).
 5. **`docs/README.md`** says the ADR directory holds "۸ سند" (8) — it holds 12.
+   - ✅ **RESOLVED:** corrected during the 2026-11-28 documentation bootstrap (count ۱۳); kept in sync by `P23` (۱۴ with ADR-0014).
 6. **`CLAUDE.md`** references "8 ADRs", a non-existent `./start.sh` (it self-flags this), and stale sandbox notes; last-updated 2026-10-23/11-01 era.
+   - ✅ **RESOLVED 2026-11-28 (task `P23`, decision A):** the root file was archived **unchanged** to `docs/archive/2026-11-post-recovery/CLAUDE.md`; `AGENTS.md` is the single agent-instructions file; no active doc references the root path.
 7. **Legacy repo name recorded two ways** (see §6, last row) — org was renamed Nov 1 (`.diag/30-p6-verify.txt` pending-action note), explaining the difference; current name not verifiable from this clone.
+   - ✅ **RESOLVED 2026-11-28 (task `P23`):** current remote confirmed as `git@github.com:MontAmooz/mont-amooz.git` (`PROJECT_STATUS.md §A`, `docs/GIT-STRATEGY.md §6`); the two recorded names are the pre/post-rename org name.
 8. **Contributor identity (see §9).** The task's allowed-identity string `montajebii <mohammad.montajebii@gmail.com>` matches the repo's **email** exactly, but the repo's **name** is `Mohammadreza Montajebi` — a strict name+email comparison fails on the maintainer's own 44 commit slots. A canonical decision is required (§9.6-1).
+   - ✅ **RESOLVED 2026-11-28 (task `P22`):** canonical identity decided and wired (ADR-0013; `PROJECT_STATUS.md §J`).
 
 ## 8. PROPOSED (not historical — requires explicit human approval; no IDs minted)
 
@@ -155,6 +163,8 @@ Trailer scan: exactly one `Co-authored-by: zwork <zwork@local>` (inside `2502332
 
 Local `.diag/` artifacts contain no tool names (checked the read set; the workflow files use neutral "prompt/phase" wording).
 
+> **Addendum 2026-11-28 (task `P23`):** the `CLAUDE.md` disposition (§9.6-4) is resolved — the root file was archived **unchanged** to `docs/archive/2026-11-post-recovery/CLAUDE.md` and `AGENTS.md` is the single agent-instructions file. Both archived copies remain tracked known self-matches for the docs text scan (`docs/TESTING.md §4.2`).
+
 ### 9.3 Files bearing on contributor hygiene
 
 | File | State |
@@ -175,7 +185,7 @@ Local `.diag/` artifacts contain no tool names (checked the read set; the workfl
 
 Two layers already exist and pass: `.githooks/commit-msg` (local) and `.github/workflows/commit-lint.yml` (CI). This task adds a documented docs-scan command in `docs/TESTING.md`. Known self-matches (policy files naming the blocked tools, listed in §9.2) are documented exceptions, not violations.
 
-### 9.6 Cleanup decisions — **items 1–3 & 5 RESOLVED 2026-11-28 (task `P22`, ADR-0013); items 4 & 6 still open**
+### 9.6 Cleanup decisions — **items 1–3 & 5 RESOLVED 2026-11-28 (task `P22`, ADR-0013); item 4 RESOLVED 2026-11-28 (task `P23`); item 6 still open**
 
 > Resolution status appended per item below; the original proposal text is preserved as the decision record.
 
@@ -186,6 +196,7 @@ Two layers already exist and pass: `.githooks/commit-msg` (local) and `.github/w
 3. **`zwork <zwork@local>` disposition.** Options: (a) accept and document (history stays immutable — recommended; the commit is functionally attributed to the maintainer via PR `#9` squash-merge authorship `M0nt`), or (b) rewrite authorship with `git filter-repo` + force-push (breaks clones, tags, CI artifact references — **not recommended**, and explicitly not performed here). A `.mailmap` entry can neutralize the display either way. **Human approval required for any option touching history.**
    - ✅ **RESOLVED 2026-11-28 (task `P22`):** option (a) approved — accepted and documented; `.mailmap` created (display unification to the canonical identity). **No history rewriting performed or permitted** — dates/SHAs verified untouched (ADR-0013, decision 3).
 4. **`CLAUDE.md` disposition.** Decide whether to archive it under `docs/archive/` and keep `AGENTS.md` as the single agent-instructions file (future documentation task; this task did not modify it per the preserve-existing constraint).
+   - ✅ **RESOLVED 2026-11-28 (task `P23`):** archived **unchanged** to `docs/archive/2026-11-post-recovery/CLAUDE.md`; `AGENTS.md` remains the sole agent-instructions file; references in `docs/README.md`/`docs/TESTING.md` updated accordingly (no active doc references the root path).
 5. **Wire hygiene into CI.** Add a job running `scripts/check-contributors.sh` (+ optionally the docs text scan) to `.github/workflows/` — this modifies CI config and is therefore out of scope here (task constraint §2.1); recorded as a proposed change.
    - ✅ **RESOLVED 2026-11-28 (task `P22`):** wired as job `hygiene` in `.github/workflows/hygiene.yml` (checkout `fetch-depth: 0`, runs the script on every PR to `main` and push to `main`; registered in `docs/TESTING.md §4.3`). The optional docs text scan remains unwired (documented self-matches would need an exclusion list).
 6. **Prevent recurrence** of off-machine identities (e.g., set `git config --global user.name/email` explicitly, or repo-level config) — future operational task.

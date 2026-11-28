@@ -14,6 +14,15 @@ It is NOT a live credential. It was removed from src/ in commit b20c924 (P2).
 Secret-scanning CI is scoped to code files only — do not modify docs to "clean" this.
 -->
 
+<!--
+NOTE (added 2026-11-28, task P23): Two markers below are historical, not current:
+(1) the session cookie is now named `ma_session` (rename recorded in ADR-0011);
+(2) "P6" in the Status/Migration plan refers to the *planned* numbering that was
+never executed — see ADR-0014 (stage-numbering convention). The JWT migration has
+not happened; execute-or-retire is tracked in PROJECT_STATUS.md §E.3.
+Body text is preserved unchanged as the historical record.
+-->
+
 - **Status:** ACCEPTED — مهاجرت به JWT برنامه‌ریزی‌شده در **P6**
 - **Date:** 2026-10-30
 - **Supersedes:** بخش «Authentication» در DECISIONS v1 (JWT access + refresh از روز اول).
